@@ -1,11 +1,11 @@
 export const BRAND = {
   name: "meepo",
-  tagline: "Where vibe-coded projects go to live",
-  subtitle: "A public home for weird little AI-built projects",
+  tagline: "Strange minds behind strange software",
+  subtitle: "A creator platform for authored software",
   description:
-    "Tiny software. Strange ideas. Real personality. A home for the things people make because they care.",
+    "A public home for weird little AI-built artifacts where makers stay visible and software feels personal, playful, and artful.",
   url: "meepo.online",
-  footerLine: "Meepo · weird little projects deserve to live somewhere",
+  footerLine: "Meepo · authored software deserves a cultural home",
 } as const;
 
 export const STATUS_OPTIONS = [

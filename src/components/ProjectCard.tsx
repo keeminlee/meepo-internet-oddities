@@ -10,7 +10,7 @@ export function ProjectCard({ project }: { project: Project }) {
   return (
     <Link
       to={`/project/${project.slug}`}
-      className="group block rounded-xl border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1"
+      className="group block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
     >
       {/* Screenshot */}
       <div className="overflow-hidden">
@@ -25,32 +25,35 @@ export function ProjectCard({ project }: { project: Project }) {
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-3 p-4">
+        {/* Maker-first identity */}
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+            {project.makerName.charAt(0)}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">By</p>
+            <p className="truncate text-sm font-semibold leading-tight">
+              {project.makerName}{" "}
+              {project.makerHandle && (
+                <span className="text-xs font-normal text-muted-foreground">{project.makerHandle}</span>
+              )}
+            </p>
+          </div>
+        </div>
+
         {/* Status + Built with */}
         <div className="flex items-center justify-between gap-2">
           <StatusBadge status={project.status} />
           <BuiltWithBadge builtWith={project.builtWith} />
         </div>
 
-        {/* Title + Pitch */}
+        {/* Project identity */}
         <div>
-          <h3 className="font-display text-lg font-bold leading-tight group-hover:text-primary transition-colors">
+          <h3 className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
             {project.name}
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-            {project.pitch}
-          </p>
-        </div>
-
-        {/* Maker */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-            {project.makerName.charAt(0)}
-          </div>
-          <span className="text-sm font-medium">{project.makerName}</span>
-          {project.makerHandle && (
-            <span className="text-xs text-muted-foreground">{project.makerHandle}</span>
-          )}
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{project.pitch}</p>
         </div>
 
         {/* Tags */}
@@ -61,7 +64,7 @@ export function ProjectCard({ project }: { project: Project }) {
         </div>
 
         {/* Clicks */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1 border-t border-border">
+        <div className="flex items-center gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
           <MousePointerClick className="h-3.5 w-3.5" />
           <span className="font-medium">{project.clicksSent.toLocaleString()}</span>
           <span>clicks sent</span>

@@ -53,7 +53,7 @@ export function SubmitDialog({ open, onOpenChange }: SubmitDialogProps) {
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Post your project</DialogTitle>
           <DialogDescription>
-            Built something weird? Put it here. Takes 2 minutes.
+            Built something personal, strange, or playful? Publish the artifact and maker story in under 2 minutes.
           </DialogDescription>
         </DialogHeader>
 
@@ -69,7 +69,7 @@ export function SubmitDialog({ open, onOpenChange }: SubmitDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="pitch">One-line pitch</Label>
+            <Label htmlFor="pitch">One-line artifact pitch</Label>
             <Input id="pitch" placeholder="It does this one strange thing..." required />
           </div>
 
@@ -80,7 +80,7 @@ export function SubmitDialog({ open, onOpenChange }: SubmitDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="maker">Your name</Label>
+              <Label htmlFor="maker">Maker name</Label>
               <Input id="maker" placeholder="Your name or handle" required />
             </div>
             <div className="space-y-2">
@@ -134,7 +134,7 @@ export function SubmitDialog({ open, onOpenChange }: SubmitDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="whyMade">Why did you make this? (optional)</Label>
+            <Label htmlFor="whyMade">Why did you make this? (maker note)</Label>
             <Textarea
               id="whyMade"
               placeholder="I was bored at 2am and..."
