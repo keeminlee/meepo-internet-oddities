@@ -5,7 +5,6 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { TagFilter } from "@/components/TagFilter";
 import { SubmitDialog } from "@/components/SubmitDialog";
 import {
-  projects,
   getFeaturedProjects,
   getNewestProjects,
   getSeekingUsersProjects,
@@ -84,12 +83,12 @@ export default function Index() {
               }
             >
               <ArrowDown className="h-4 w-4" />
-              Browse the weirdness
+              Explore the observatory
             </Button>
           </div>
         </div>
         <div className="mt-6 text-sm text-muted-foreground">
-          Not every project needs to be a unicorn.
+          Authorship is the feature.
         </div>
       </section>
 
@@ -98,7 +97,7 @@ export default function Index() {
         {/* Tag filter */}
         <div className="space-y-4">
           <p className="text-center text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Browse by vibe
+            Discover by vibe
           </p>
           <TagFilter activeTag={activeTag} onTagChange={setActiveTag} />
         </div>
@@ -114,18 +113,18 @@ export default function Index() {
           <>
             <ProjectGrid
               items={featured}
-              title="Things we love"
-              subtitle="Picked by taste, not algorithm"
+              title="Featured transmissions"
+              subtitle="Curated for voice, taste, and singularity"
             />
             <ProjectGrid
               items={newest}
-              title="Newest"
-              subtitle="Fresh from the internet"
+              title="Fresh arrivals"
+              subtitle="New artifacts from strange minds"
             />
             <ProjectGrid
               items={seeking}
-              title="Needs curious humans"
-              subtitle="Looking for first users and collaborators"
+              title="Needs first believers"
+              subtitle="Projects seeking curious users and collaborators"
             />
           </>
         )}

@@ -62,13 +62,13 @@ export default function ProjectDetail() {
           <h1 className="font-display text-4xl font-bold md:text-5xl">{project.name}</h1>
           <p className="text-xl text-muted-foreground">{project.pitch}</p>
 
-          {/* Maker */}
+          {/* Maker identity */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
               {project.makerName.charAt(0)}
             </div>
             <div>
-              <div className="font-medium">{project.makerName}</div>
+              <div className="font-medium">{project.makerName} {project.makerHandle && <span className="text-sm text-muted-foreground">{project.makerHandle}</span>}</div>
               {project.makerBio && (
                 <div className="text-sm text-muted-foreground">{project.makerBio}</div>
               )}
@@ -92,13 +92,13 @@ export default function ProjectDetail() {
         {/* Sections */}
         <div className="space-y-8 border-t border-border pt-8">
           <div className="space-y-2">
-            <h2 className="font-display text-xl font-bold">About this project</h2>
+            <h2 className="font-display text-xl font-bold">Artifact note</h2>
             <p className="text-muted-foreground leading-relaxed">{project.about}</p>
           </div>
 
           {project.whyMade && (
             <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
-              <h2 className="font-display text-xl font-bold">Why I made this</h2>
+              <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
               <p className="text-muted-foreground leading-relaxed italic">"{project.whyMade}"</p>
               <p className="text-sm font-medium">— {project.makerName}</p>
             </div>
