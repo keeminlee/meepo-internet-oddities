@@ -7,7 +7,7 @@ This project is building a public home for weird little AI-built artifacts where
 - taste and personality are the product,
 - and software is treated like culture (not just SaaS).
 
-Keemin: yeah what Codex said, also I honestly just felt like vibe coding is basically the new Youtube (like old Youtube) where people can express themselves. And it's cool to see the weird unique stuff people come up with even if it's not particularly useful (yet?!)
+**Keemin:** yeah what Codex said, also I honestly just felt like vibe coding is basically the new Youtube (like old Youtube) where people can express themselves. And it's cool to see the weird unique stuff people come up with even if it's not particularly useful (yet?!)
 
 ## Product thesis
 
