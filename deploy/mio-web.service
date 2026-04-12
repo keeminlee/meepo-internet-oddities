@@ -1,0 +1,21 @@
+[Unit]
+Description=Meepo Internet Oddities (MIO Web)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=meepo
+Group=meepo
+WorkingDirectory=/srv/mio
+EnvironmentFile=/etc/mio/mio-web.env
+ExecStart=/usr/bin/env node --experimental-strip-types server/index.ts
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
