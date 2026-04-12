@@ -1,0 +1,318 @@
+import type { ProjectStatus, BuiltWith, ProjectTag } from "@/lib/constants";
+
+export interface Project {
+  id: string;
+  slug: string;
+  name: string;
+  url: string;
+  pitch: string;
+  screenshot: string;
+  makerName: string;
+  makerHandle?: string;
+  makerBio?: string;
+  contactEmail?: string;
+  builtWith: BuiltWith;
+  tags: ProjectTag[];
+  status: ProjectStatus;
+  clicksSent: number;
+  about: string;
+  whyMade?: string;
+  whyCool?: string;
+  featured?: boolean;
+  createdAt: string;
+}
+
+export const projects: Project[] = [
+  {
+    id: "1",
+    slug: "color-of-the-day",
+    name: "Color of the Day",
+    url: "https://example.com/color",
+    pitch: "Every day, one color. That's it. That's the site.",
+    screenshot: "https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&h=450&fit=crop",
+    makerName: "Ava Chen",
+    makerHandle: "@avacodes",
+    makerBio: "Designer who codes at 2am",
+    builtWith: "Lovable",
+    tags: ["Beautiful", "Weird", "Personal"],
+    status: "Live",
+    clicksSent: 2341,
+    about: "A meditative site that generates one unique color per day based on the date, weather data, and vibes. No controls. No settings. Just today's color.",
+    whyMade: "I wanted to make something that felt like looking out a window. No clicks, no decisions. Just a color.",
+    whyCool: "It's the anti-app. People use it as a screensaver, a mood ring, a conversation starter.",
+    featured: true,
+    createdAt: "2026-03-15",
+  },
+  {
+    id: "2",
+    slug: "is-it-raining-in-tokyo",
+    name: "Is it Raining in Tokyo?",
+    url: "https://example.com/rain-tokyo",
+    pitch: "A single page that tells you if it's raining in Tokyo right now.",
+    screenshot: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=800&h=450&fit=crop",
+    makerName: "Kai Tanaka",
+    makerHandle: "@kaitanaka",
+    builtWith: "Claude",
+    tags: ["Useful", "Weird", "Playful"],
+    status: "Live",
+    clicksSent: 4892,
+    about: "Checks real weather API data for Tokyo and displays a big YES or NO. Has a subtle rain animation when it is, in fact, raining.",
+    whyMade: "My friend in Tokyo kept telling me about the rain. I wanted to just know, instantly, without opening a weather app.",
+    featured: true,
+    createdAt: "2026-03-20",
+  },
+  {
+    id: "3",
+    slug: "the-apology-generator",
+    name: "The Apology Generator",
+    url: "https://example.com/sorry",
+    pitch: "AI-generated apologies for things you definitely shouldn't have done.",
+    screenshot: "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&h=450&fit=crop",
+    makerName: "Jordan Flux",
+    makerHandle: "@jordanflux",
+    makerBio: "Makes internet things when bored",
+    builtWith: "ChatGPT",
+    tags: ["Cursed", "Playful", "Experiment"],
+    status: "Live",
+    clicksSent: 7823,
+    about: "Type in what you did wrong and get a dramatically over-the-top, professionally worded apology letter. Share it as a link.",
+    whyMade: "I apologize too much. I wanted AI to apologize better than me.",
+    whyCool: "People are sharing these at work and nobody can tell if they're real.",
+    featured: true,
+    createdAt: "2026-02-28",
+  },
+  {
+    id: "4",
+    slug: "font-feelings",
+    name: "Font Feelings",
+    url: "https://example.com/fonts",
+    pitch: "Describe your mood and get a font pairing that matches.",
+    screenshot: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=450&fit=crop",
+    makerName: "Priya Sharma",
+    makerHandle: "@priyatype",
+    builtWith: "Lovable",
+    tags: ["Beautiful", "Tool", "Personal"],
+    status: "Live",
+    clicksSent: 1567,
+    about: "An emotional font recommender. Describe how you feel, and it suggests a Google Font pairing with a color palette and sample layout.",
+    whyMade: "Every font picker sorts by popularity. None sort by feeling. That seemed wrong.",
+    featured: true,
+    createdAt: "2026-03-10",
+  },
+  {
+    id: "5",
+    slug: "pet-name-rater",
+    name: "Pet Name Rater",
+    url: "https://example.com/petnames",
+    pitch: "Submit your pet's name and an AI will rate it out of 10 with brutal honesty.",
+    screenshot: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=450&fit=crop",
+    makerName: "Max Woof",
+    makerHandle: "@maxwoof",
+    builtWith: "Bolt",
+    tags: ["Cursed", "Playful", "Game"],
+    status: "Live",
+    clicksSent: 12450,
+    about: "An AI judge evaluates your pet's name on creativity, phonetics, and 'would I yell this at a park' factor. Surprisingly addictive.",
+    whyMade: "My cat is named Breadstick and I needed external validation.",
+    createdAt: "2026-03-25",
+  },
+  {
+    id: "6",
+    slug: "starstory-chronicles",
+    name: "Starstory Chronicles",
+    url: "https://example.com/starstory",
+    pitch: "A collaborative worldbuilding engine where AI and humans write lore together.",
+    screenshot: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=800&h=450&fit=crop",
+    makerName: "Nyx Ember",
+    makerHandle: "@nyxember",
+    makerBio: "Worldbuilder, lore nerd, midnight coder",
+    builtWith: "Cursor",
+    tags: ["Story", "Experiment", "Beautiful"],
+    status: "Seeking Users",
+    clicksSent: 892,
+    about: "A living worldbuilding tool where you create civilizations, histories, and characters — and AI fills in the gaps. Every world is shareable and forkable.",
+    whyMade: "I've been building fictional worlds in notebooks since I was 12. I wanted to see what happens when AI helps.",
+    whyCool: "People are building entire RPG settings, novel backdrops, and classroom exercises with it.",
+    createdAt: "2026-03-05",
+  },
+  {
+    id: "7",
+    slug: "wifi-name-generator",
+    name: "WiFi Name Generator",
+    url: "https://example.com/wifi",
+    pitch: "Generate passive-aggressive, hilarious, or cryptic WiFi network names.",
+    screenshot: "https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&h=450&fit=crop",
+    makerName: "Sam Router",
+    builtWith: "Replit",
+    tags: ["Tool", "Playful", "Cursed"],
+    status: "Live",
+    clicksSent: 3201,
+    about: "Pick a vibe (threatening, wholesome, nerdy, unhinged) and get WiFi name suggestions. Copy to clipboard. Annoy your neighbors.",
+    whyMade: "My neighbor's WiFi is called 'FBI Surveillance Van 2' and I needed to escalate.",
+    createdAt: "2026-04-01",
+  },
+  {
+    id: "8",
+    slug: "one-pixel-art",
+    name: "One Pixel Art",
+    url: "https://example.com/1px",
+    pitch: "A collaborative canvas where each visitor can only place one pixel per day.",
+    screenshot: "https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=800&h=450&fit=crop",
+    makerName: "Zara Dot",
+    makerHandle: "@zaradot",
+    builtWith: "Lovable",
+    tags: ["Experiment", "Beautiful", "Game"],
+    status: "Seeking Users",
+    clicksSent: 567,
+    about: "A 256x256 canvas that evolves one pixel at a time. No accounts, just your daily pixel. Watch patterns emerge over weeks.",
+    whyMade: "I was thinking about r/place but slower. What if collective art took patience?",
+    createdAt: "2026-04-05",
+  },
+  {
+    id: "9",
+    slug: "meeting-excuse-bot",
+    name: "Meeting Excuse Bot",
+    url: "https://example.com/excuse",
+    pitch: "Generate believable excuses to skip meetings. Calibrated by urgency level.",
+    screenshot: "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800&h=450&fit=crop",
+    makerName: "Alex Slack",
+    makerHandle: "@alexslack",
+    makerBio: "Meetings survivor",
+    builtWith: "ChatGPT",
+    tags: ["Tool", "Cursed", "Playful"],
+    status: "Live",
+    clicksSent: 9102,
+    about: "Slide a scale from 'mildly inconvenient' to 'absolutely cannot attend' and get a perfectly worded Slack message. Includes follow-up responses.",
+    whyMade: "I had 7 meetings in one day. Something had to give.",
+    createdAt: "2026-03-18",
+  },
+  {
+    id: "10",
+    slug: "ambient-worlds",
+    name: "Ambient Worlds",
+    url: "https://example.com/ambient",
+    pitch: "Procedurally generated ambient soundscapes from imaginary places.",
+    screenshot: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=450&fit=crop",
+    makerName: "Luna Wave",
+    makerHandle: "@lunawave",
+    builtWith: "Cursor",
+    tags: ["Beautiful", "Experiment", "Personal"],
+    status: "Prototype",
+    clicksSent: 1890,
+    about: "Type a place that doesn't exist — 'a library on the moon', 'a train station in a cloud' — and hear what it sounds like. Generated with AI audio.",
+    whyMade: "I wanted background noise that didn't exist yet.",
+    whyCool: "People use it for writing, sleeping, and just vibing.",
+    createdAt: "2026-03-28",
+  },
+  {
+    id: "11",
+    slug: "readme-roaster",
+    name: "README Roaster",
+    url: "https://example.com/roast",
+    pitch: "Paste your GitHub README and get a brutally honest code review of the vibes.",
+    screenshot: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=450&fit=crop",
+    makerName: "Dev Critic",
+    makerHandle: "@devcritic",
+    builtWith: "Claude",
+    tags: ["Tool", "Cursed", "Weird"],
+    status: "Live",
+    clicksSent: 5670,
+    about: "Not a code review — a vibe review. It judges your project's name, description, emoji usage, badge addiction, and whether your README has personality.",
+    whyMade: "Too many READMEs are just auto-generated templates. I wanted to celebrate the weird ones.",
+    createdAt: "2026-04-02",
+  },
+  {
+    id: "12",
+    slug: "compliment-machine",
+    name: "Compliment Machine",
+    url: "https://example.com/compliment",
+    pitch: "Press a button. Get a genuine, specific, weirdly touching compliment.",
+    screenshot: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&h=450&fit=crop",
+    makerName: "Joy Park",
+    makerHandle: "@joypark",
+    builtWith: "Lovable",
+    tags: ["Playful", "Personal", "Beautiful"],
+    status: "Live",
+    clicksSent: 8934,
+    about: "One button. One compliment. But they're not generic — they're oddly specific and feel like they were written by a friend who really sees you.",
+    whyMade: "I was having a bad day and wrote the compliment I wanted to hear. Then I made 500 more.",
+    whyCool: "People keep coming back. Some screenshot their favorites. Some cry (in a good way).",
+    featured: false,
+    createdAt: "2026-03-22",
+  },
+  {
+    id: "13",
+    slug: "deadline-chicken",
+    name: "Deadline Chicken",
+    url: "https://example.com/chicken",
+    pitch: "A countdown timer that gets increasingly aggressive as your deadline approaches.",
+    screenshot: "https://images.unsplash.com/photo-1501139083538-0139583c060f?w=800&h=450&fit=crop",
+    makerName: "Procrastinator Prime",
+    makerHandle: "@procrastiprime",
+    builtWith: "Bolt",
+    tags: ["Tool", "Cursed", "Game"],
+    status: "Prototype",
+    clicksSent: 2103,
+    about: "Set a deadline. The timer starts calm. As time runs out, the page gets redder, the font gets bigger, and the messages get more unhinged.",
+    whyMade: "Normal timers don't stress me out enough. I needed emotional consequences.",
+    createdAt: "2026-04-08",
+  },
+  {
+    id: "14",
+    slug: "tiny-museum",
+    name: "Tiny Museum",
+    url: "https://example.com/museum",
+    pitch: "A museum of objects that only exist on the internet.",
+    screenshot: "https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&h=450&fit=crop",
+    makerName: "Curator X",
+    makerHandle: "@curatorx",
+    makerBio: "Collecting digital nothing since 2024",
+    builtWith: "OpenBuilder",
+    tags: ["Weird", "Story", "Beautiful"],
+    status: "Seeking Collaborator",
+    clicksSent: 445,
+    about: "A curated collection of digital artifacts — screenshots of deleted tweets, AI-generated objects, website fossils, and things that only ever existed as pixels.",
+    whyMade: "The internet is full of beautiful ephemeral things. I wanted to put some in a glass case.",
+    whyCool: "It makes you think about what 'real' means when everything is digital.",
+    createdAt: "2026-04-10",
+  },
+  {
+    id: "15",
+    slug: "vibe-check-api",
+    name: "Vibe Check API",
+    url: "https://example.com/vibecheck",
+    pitch: "An API that rates the vibe of any text on a scale from 'corporate email' to 'unhinged tweet'.",
+    screenshot: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=450&fit=crop",
+    makerName: "API Andy",
+    makerHandle: "@apihandy",
+    builtWith: "Claude",
+    tags: ["Tool", "Experiment", "Weird"],
+    status: "Seeking Users",
+    clicksSent: 1230,
+    about: "POST any text and get back a vibe score, vibe category, and suggested improvements. Works great for checking if your email sounds too corporate.",
+    whyMade: "I kept sending emails that sounded like a press release. I needed an intervention.",
+    createdAt: "2026-04-06",
+  },
+];
+
+export function getProjectBySlug(slug: string): Project | undefined {
+  return projects.find((p) => p.slug === slug);
+}
+
+export function getFeaturedProjects(): Project[] {
+  return projects.filter((p) => p.featured);
+}
+
+export function getNewestProjects(count = 6): Project[] {
+  return [...projects]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, count);
+}
+
+export function getSeekingUsersProjects(): Project[] {
+  return projects.filter((p) => p.status === "Seeking Users" || p.status === "Seeking Collaborator");
+}
+
+export function filterByTag(tag: string): Project[] {
+  return projects.filter((p) => p.tags.includes(tag as any));
+}
