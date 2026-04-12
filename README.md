@@ -4,7 +4,7 @@ Meepo is a **creator platform for authored software**.
 
 This project is building a public home for weird little AI-built artifacts where:
 - makers are visible,
-- taste and personality are the product,
+- taste and personality are the product  # ick
 - and software is treated like culture (not just SaaS).
 
 # yeah what Codex said, also I honestly just felt like vibe coding is basically the new Youtube (like old Youtube) where people can express themselves. And it's cool to see the weird unique stuff people come up with even if it's not particularly useful (yet?!)
@@ -14,7 +14,7 @@ But like, you see how the point for some reason when it comes to SaaS is always 
 
 Modern software got polished, faceless, and interchangeable.
 
-Meepo intentionally moves in the other direction:
+Meepo intentionally moves in the other direction:  # hell yeah
 - **Authorship over anonymity**
 - **Personality over polish**
 - **Artifacts over feature checklists**
