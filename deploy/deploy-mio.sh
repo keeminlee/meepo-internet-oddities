@@ -1,147 +1,165 @@
 #!/usr/bin/env bash
-# deploy-mio.sh — rsync-based deploy for Meepo Internet Oddities
-# Usage: ./deploy-mio.sh meepo@ec2-host
-#
-# This script rsyncs PRE-BUILT local artifacts to the remote server.
-# It NEVER runs npm, vite, or any build command on the remote server.
 set -euo pipefail
 
-# ── Configuration ────────────────────────────────────────
-REMOTE_DIR="/srv/mio"
-ENV_FILE="/etc/mio/mio-web.env"
-SERVICE="mio-web"
-HEALTH_URL="http://127.0.0.1:3001/api/health"
-MIN_FREE_KB="${MIN_FREE_KB:-256000}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+APP_DIR="${APP_DIR:-/home/meepo/mio}"
+BRANCH="${BRANCH:-main}"
+SERVICE="${SERVICE:-mio-web}"
+ENV_FILE="${ENV_FILE:-/etc/mio/mio-web.env}"
+MIN_FREE_KB="${MIN_FREE_KB:-512000}"
+HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:3001/api/health}"
 
-# ── Argument parsing ────────────────────────────────────
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <ssh-target> [--dry-run]"
-  echo "  e.g. $0 meepo@ec2-host"
+require_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1" >&2
+    exit 1
+  fi
+}
+
+require_cmd git
+require_cmd npm
+require_cmd node
+require_cmd curl
+require_cmd sudo
+require_cmd systemctl
+require_cmd df
+require_cmd awk
+require_cmd date
+
+if [ ! -d "$APP_DIR/.git" ]; then
+  echo "[deploy] expected git repo at $APP_DIR"
   exit 1
 fi
 
-SSH_TARGET="$1"
-DRY_RUN=""
-if [ "${2:-}" = "--dry-run" ]; then
-  DRY_RUN="--dry-run"
+cd "$APP_DIR"
+
+if ! sudo -n true >/dev/null 2>&1; then
+  echo "[deploy] sudo must be passwordless for deploy user (required for systemctl restart)." >&2
+  exit 1
 fi
 
-# ── Helpers ──────────────────────────────────────────────
+git fetch --prune origin
+git fetch --force --tags origin
+
+TARGET_SHA="$(git rev-parse --short "origin/$BRANCH")"
+DEPLOY_ID="$(date -u +%Y%m%dT%H%M%SZ)-$TARGET_SHA"
+
 log() {
-  echo "[deploy-mio] $(date -u +%H:%M:%SZ) $*"
+  echo "[deploy:$DEPLOY_ID] $*"
 }
 
-fail() {
-  log "FATAL: $*"
-  exit 1
-}
+run_stage() {
+  local stage="$1"
+  local status
+  shift
 
-run_remote() {
-  ssh -o ConnectTimeout=10 -o BatchMode=yes "$SSH_TARGET" "$@"
-}
-
-# ── Stage: Preflight (local) ────────────────────────────
-log "=== PREFLIGHT (local) ==="
-
-[ -d "$PROJECT_ROOT/dist" ] || fail "dist/ not found. Run 'npm run build' locally before deploying."
-[ -d "$PROJECT_ROOT/server" ] || fail "server/ not found at project root."
-[ -f "$PROJECT_ROOT/server/index.ts" ] || fail "server/index.ts not found."
-
-log "Local artifacts OK: dist/ and server/ present"
-
-# ── Stage: Preflight (remote) ───────────────────────────
-log "=== PREFLIGHT (remote) ==="
-
-log "Testing SSH connectivity..."
-run_remote "true" || fail "Cannot connect to $SSH_TARGET via SSH"
-
-log "Checking remote deploy directory..."
-run_remote "[ -d '$REMOTE_DIR' ]" || fail "Remote directory $REMOTE_DIR does not exist. Create it first: sudo mkdir -p $REMOTE_DIR && sudo chown meepo:meepo $REMOTE_DIR"
-
-log "Checking remote env file..."
-run_remote "[ -f '$ENV_FILE' ]" || fail "Remote env file $ENV_FILE does not exist. Place it first: sudo mkdir -p /etc/mio && sudo cp mio-web.env.example $ENV_FILE"
-
-log "Checking disk space..."
-AVAILABLE_KB=$(run_remote "df -Pk /srv | awk 'NR==2 {print \$4}'")
-if [ "$AVAILABLE_KB" -lt "$MIN_FREE_KB" ]; then
-  fail "Insufficient disk space: ${AVAILABLE_KB}KB free, need ${MIN_FREE_KB}KB"
-fi
-log "Disk OK: ${AVAILABLE_KB}KB free"
-
-log "Checking sudo access..."
-run_remote "sudo -n true" || fail "Sudo must be passwordless for deploy user"
-
-# ── Stage: Rsync ────────────────────────────────────────
-log "=== RSYNC ==="
-
-# Sync dist/ (frontend build output)
-log "Syncing dist/..."
-rsync -avz --delete $DRY_RUN \
-  "$PROJECT_ROOT/dist/" \
-  "$SSH_TARGET:$REMOTE_DIR/dist/"
-
-# Sync server/ (backend TypeScript source — runs via --experimental-strip-types)
-log "Syncing server/..."
-rsync -avz --delete $DRY_RUN \
-  "$PROJECT_ROOT/server/" \
-  "$SSH_TARGET:$REMOTE_DIR/server/"
-
-# Sync the systemd unit file to the deploy directory (for reference / manual install)
-if [ -f "$SCRIPT_DIR/mio-web.service" ]; then
-  log "Syncing systemd unit..."
-  rsync -avz $DRY_RUN \
-    "$SCRIPT_DIR/mio-web.service" \
-    "$SSH_TARGET:$REMOTE_DIR/mio-web.service"
-fi
-
-if [ -n "$DRY_RUN" ]; then
-  log "Dry run complete. No remote changes made."
-  exit 0
-fi
-
-# ── Stage: Systemd ──────────────────────────────────────
-log "=== SYSTEMD ==="
-
-# Install service file if it was synced
-run_remote "
-  if [ -f '$REMOTE_DIR/mio-web.service' ]; then
-    sudo cp '$REMOTE_DIR/mio-web.service' /etc/systemd/system/$SERVICE.service
-    sudo systemctl daemon-reload
+  log "=== STAGE: $stage ==="
+  set +e
+  "$@"
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    log "FAILED: $stage"
+    exit "$status"
   fi
-"
-log "Systemd daemon reloaded"
+  log "$stage completed"
+}
 
-# ── Stage: Restart ──────────────────────────────────────
-log "=== RESTART ==="
+wait_for_active() {
+  local unit="$1"
+  local attempts="${2:-20}"
+  local delay_secs="${3:-1}"
 
-run_remote "sudo systemctl restart $SERVICE"
-log "Service $SERVICE restarted"
+  for ((i=1; i<=attempts; i++)); do
+    if sudo systemctl is-active --quiet "$unit"; then
+      return 0
+    fi
+    sleep "$delay_secs"
+  done
 
-# ── Stage: Health Check ─────────────────────────────────
-log "=== HEALTH CHECK ==="
+  log "FAILED: health-check ($unit is not active)"
+  sudo journalctl -u "$unit" -n 200 --no-pager || true
+  return 1
+}
 
-HEALTH_OK=0
-for i in $(seq 1 15); do
-  if run_remote "curl -fsS '$HEALTH_URL'" >/dev/null 2>&1; then
-    HEALTH_OK=1
-    break
+wait_for_http() {
+  local url="$1"
+  local attempts="${2:-30}"
+  local delay_secs="${3:-1}"
+
+  for ((i=1; i<=attempts; i++)); do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "$delay_secs"
+  done
+
+  log "FAILED: health-check (health check failed at $url)"
+  return 1
+}
+
+sync_stage() {
+  git checkout -B "$BRANCH" "origin/$BRANCH"
+}
+
+preflight_stage() {
+  local available_kb
+  local disk_summary
+
+  log "app_dir=$APP_DIR branch=$BRANCH"
+  log "node: $(node --version)"
+  log "npm: $(npm --version)"
+  log "commit: $(git rev-parse --short HEAD)"
+  log "branch: $(git rev-parse --abbrev-ref HEAD)"
+  log "cwd: $(pwd)"
+  disk_summary="$(df -Pk / | awk 'NR==2 {printf "%sKB free (%s used)", $4, $5}')"
+  log "disk: $disk_summary"
+
+  [ -f "$APP_DIR/package-lock.json" ] || { log "ERROR: package-lock.json missing"; return 1; }
+  [ -d "$APP_DIR/server" ] || { log "ERROR: server/ missing"; return 1; }
+  [ -d "$APP_DIR/deploy" ] || { log "ERROR: deploy/ missing"; return 1; }
+  [ -f "$ENV_FILE" ] || { log "ERROR: missing env file: $ENV_FILE"; return 1; }
+
+  available_kb="$(df -Pk / | awk 'NR==2 {print $4}')"
+  if [ "$available_kb" -lt "$MIN_FREE_KB" ]; then
+    log "ERROR: insufficient disk space (${available_kb}KB free; need at least ${MIN_FREE_KB}KB)"
+    return 1
   fi
-  log "Health check attempt $i/15 — waiting..."
-  sleep 2
-done
+}
 
-if [ "$HEALTH_OK" -ne 1 ]; then
-  log "FAILED: Health check did not pass after 15 attempts"
-  log "Fetching recent logs..."
-  run_remote "sudo journalctl -u $SERVICE -n 50 --no-pager" || true
-  fail "Deploy failed — service is not healthy"
-fi
+clean_stage() {
+  git clean -ffd
+  rm -rf node_modules
+}
 
-log "Health check passed"
+deps_stage() {
+  npm ci --no-audit --no-fund
+}
 
-# ── Done ────────────────────────────────────────────────
-log "=== SUCCESS ==="
-log "MIO deployed to $SSH_TARGET:$REMOTE_DIR"
-log "Service: $SERVICE | Health: $HEALTH_URL"
+build_stage() {
+  cd "$APP_DIR"
+  npm run build
+}
+
+restart_stage() {
+  cd "$APP_DIR"
+  sudo systemctl daemon-reload
+  sudo systemctl restart "$SERVICE"
+}
+
+health_check_stage() {
+  wait_for_active "$SERVICE"
+  wait_for_http "$HEALTHCHECK_URL"
+}
+
+log "prepared deploy context for origin/$BRANCH"
+log "target_sha=$TARGET_SHA"
+
+run_stage sync sync_stage
+run_stage preflight preflight_stage
+run_stage clean clean_stage
+run_stage deps deps_stage
+run_stage build build_stage
+run_stage restart restart_stage
+run_stage health-check health_check_stage
+
+log "success: $BRANCH deployed"
