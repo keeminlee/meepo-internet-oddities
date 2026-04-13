@@ -1,0 +1,39 @@
+name: Deploy MIO
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: mio-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Start ssh-agent
+        run: |
+          eval "$(ssh-agent -s)"
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' | ssh-add -
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+      - name: Trust host
+        run: |
+          ssh-keyscan -p "${{ secrets.EC2_PORT }}" -H "${{ secrets.EC2_SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Run remote deploy
+        run: |
+          APP_DIR="/home/meepo/mio"
+          REPO_URL="https://x-access-token:${{ github.token }}@github.com/keeminlee/meepo-internet-oddities.git"
+          ssh -p "${{ secrets.EC2_PORT }}" \
+            "${{ secrets.EC2_SSH_USER }}@${{ secrets.EC2_SSH_HOST }}" \
+            "git -C $APP_DIR remote set-url origin $REPO_URL; git config --global --add safe.directory $APP_DIR; APP_DIR=$APP_DIR /bin/bash $APP_DIR/deploy/deploy-mio.sh"
