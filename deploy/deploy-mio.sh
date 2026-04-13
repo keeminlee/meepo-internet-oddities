@@ -7,6 +7,10 @@ SERVICE="${SERVICE:-mio-web}"
 ENV_FILE="${ENV_FILE:-/etc/mio/mio-web.env}"
 MIN_FREE_KB="${MIN_FREE_KB:-512000}"
 HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:3001/api/health}"
+DATA_DIR="${DATA_DIR:-/var/lib/mio}"
+DATA_FILE="${DATA_FILE:-$DATA_DIR/db.json}"
+UPLOADS_DIR="${UPLOADS_DIR:-$DATA_DIR/uploads}"
+BUNDLED_DB_FILE="${BUNDLED_DB_FILE:-$APP_DIR/server/db.seed.json}"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -141,6 +145,20 @@ build_stage() {
   npm run build
 }
 
+runtime_data_stage() {
+  sudo install -d -m 0775 -o meepo -g meepo "$DATA_DIR"
+
+  if [ ! -f "$DATA_FILE" ]; then
+    [ -f "$BUNDLED_DB_FILE" ] || { log "ERROR: missing bundled db file: $BUNDLED_DB_FILE"; return 1; }
+    sudo install -m 0664 -o meepo -g meepo "$BUNDLED_DB_FILE" "$DATA_FILE"
+  else
+    sudo chown meepo:meepo "$DATA_FILE"
+    sudo chmod 0664 "$DATA_FILE"
+  fi
+
+  sudo install -d -m 0775 -o meepo -g meepo "$UPLOADS_DIR"
+}
+
 restart_stage() {
   cd "$APP_DIR"
   sudo systemctl daemon-reload
@@ -160,6 +178,7 @@ run_stage preflight preflight_stage
 run_stage clean clean_stage
 run_stage deps deps_stage
 run_stage build build_stage
+run_stage runtime-data runtime_data_stage
 run_stage restart restart_stage
 run_stage health-check health_check_stage
 

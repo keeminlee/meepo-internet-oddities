@@ -32,3 +32,6 @@ graphify-out/
 
 # Uploaded images
 server/uploads/
+
+# Runtime database (use db.seed.json for fresh installs)
+server/db.json

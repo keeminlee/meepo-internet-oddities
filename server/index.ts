@@ -5,14 +5,18 @@ import { resolve, dirname, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = resolve(__dirname, "db.json");
 const DIST_DIR = resolve(__dirname, "..", "dist");
-const UPLOADS_DIR = resolve(__dirname, "uploads");
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "localhost");
 const IS_PROD = process.env.NODE_ENV === "production";
+const BUNDLED_DB_PATH = resolve(__dirname, "db.seed.json");
+const DATA_ROOT = process.env.DATA_ROOT?.trim() || (IS_PROD ? "/var/lib/mio" : __dirname);
+const DB_PATH = process.env.DB_PATH?.trim() || resolve(DATA_ROOT, "db.json");
+const UPLOADS_DIR = process.env.UPLOADS_DIR?.trim() || resolve(DATA_ROOT, "uploads");
 
-// Ensure uploads directory exists
+// Ensure runtime data paths exist. In production, keep mutable state outside the git checkout.
+mkdirSync(dirname(DB_PATH), { recursive: true });
+if (!existsSync(DB_PATH)) writeFileSync(DB_PATH, readFileSync(BUNDLED_DB_PATH, "utf-8"));
 if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 
 // ── OAuth / Auth config ─────────────────────────────────
@@ -898,6 +902,15 @@ const server = createServer(async (req, res) => {
       }
       project.source_type = "both";
       project.updated_at = new Date().toISOString();
+
+      // If the meep was rejected, reset rejection fields and re-queue for review
+      if (project.rejected) {
+        project.rejected = false;
+        project.rejection_reason = "";
+        project.rejected_at = "";
+        project.rejected_by = "";
+        project.approved = false;
+      }
 
       writeDB(db);
       json(res, resolveProject(db, project));

@@ -161,6 +161,7 @@ export function useUpdateProject() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["project", variables.slug] });
+      qc.invalidateQueries({ queryKey: ["review"] });
     },
   });
 }

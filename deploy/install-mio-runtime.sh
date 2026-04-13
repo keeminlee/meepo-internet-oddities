@@ -30,4 +30,9 @@ sudo systemctl daemon-reload
 echo "[runtime] enabling mio-web service"
 sudo systemctl enable mio-web.service
 
+DATA_DIR="/var/lib/mio"
+echo "[runtime] ensuring data directory $DATA_DIR"
+sudo install -d -m 0775 -o meepo -g meepo "$DATA_DIR"
+sudo install -d -m 0775 -o meepo -g meepo "$DATA_DIR/uploads"
+
 echo "[runtime] install complete"

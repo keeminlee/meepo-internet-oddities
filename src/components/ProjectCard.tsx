@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { MousePointerClick } from "lucide-react";
 import type { ProjectWithCreator } from "@/types";
@@ -9,6 +10,8 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 export function ProjectCard({ project }: { project: ProjectWithCreator }) {
   const creatorName = project.creator?.display_name || "Unknown";
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
+  const [screenshotError, setScreenshotError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <Link
@@ -18,12 +21,13 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
       {/* Screenshot */}
       <div className="relative overflow-hidden">
         <AspectRatio ratio={16 / 9}>
-          {project.screenshot_url ? (
+          {project.screenshot_url && !screenshotError ? (
             <img
               src={project.screenshot_url}
               alt={project.name}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              onError={() => setScreenshotError(true)}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted text-4xl">
@@ -37,8 +41,8 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
       <div className="space-y-3 p-4">
         {/* Maker-first identity */}
         <div className="flex items-center gap-2">
-          {project.creator?.avatar_url ? (
-            <img src={project.creator.avatar_url} alt={creatorName} className="h-7 w-7 rounded-full" />
+          {project.creator?.avatar_url && !avatarError ? (
+            <img src={project.creator.avatar_url} alt={creatorName} className="h-7 w-7 rounded-full" onError={() => setAvatarError(true)} />
           ) : (
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
               {creatorName.charAt(0)}

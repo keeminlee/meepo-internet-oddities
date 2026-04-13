@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useProject, useTrackClick } from "@/hooks/use-api";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -32,6 +33,8 @@ export default function ProjectDetail() {
 
   const creatorName = project.creator?.display_name || "Unknown";
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
+  const [screenshotError, setScreenshotError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,12 +55,19 @@ export default function ProjectDetail() {
         {/* Hero image */}
         {project.screenshot_url && (
           <div className="overflow-hidden rounded-xl border border-border">
-            <img
-              src={project.screenshot_url}
-              alt={project.name}
-              className="w-full object-cover"
-              style={{ maxHeight: "480px" }}
-            />
+            {!screenshotError ? (
+              <img
+                src={project.screenshot_url}
+                alt={project.name}
+                className="w-full object-cover"
+                style={{ maxHeight: "480px" }}
+                onError={() => setScreenshotError(true)}
+              />
+            ) : (
+              <div className="flex h-48 w-full items-center justify-center bg-muted text-4xl">
+                🌐
+              </div>
+            )}
           </div>
         )}
 
@@ -76,8 +86,8 @@ export default function ProjectDetail() {
 
           {/* Maker identity */}
           <div className="flex items-center gap-3">
-            {project.creator?.avatar_url ? (
-              <img src={project.creator.avatar_url} alt={creatorName} className="h-10 w-10 rounded-full" />
+            {project.creator?.avatar_url && !avatarError ? (
+              <img src={project.creator.avatar_url} alt={creatorName} className="h-10 w-10 rounded-full" onError={() => setAvatarError(true)} />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                 {creatorName.charAt(0)}
@@ -99,7 +109,9 @@ export default function ProjectDetail() {
             <Button
               size="lg"
               onClick={() => {
-                if (slug) trackClick.mutate(slug);
+                try {
+                  if (slug) trackClick.mutate(slug);
+                } catch { /* best-effort tracking — never block navigation */ }
                 window.open(project.external_url, "_blank", "noopener,noreferrer");
               }}
             >
