@@ -98,6 +98,7 @@ wait_for_http() {
 }
 
 sync_stage() {
+  git reset --hard HEAD
   git checkout -B "$BRANCH" "origin/$BRANCH"
 }
 
