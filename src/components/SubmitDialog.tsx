@@ -111,8 +111,12 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
       toast.error(`Pitch must be ${PITCH_MAX} characters or fewer.`);
       return;
     }
-    if (!url.trim() && !screenshotFile && !screenshotPreview) {
-      toast.error("Provide a URL or upload a screenshot (at least one is required).");
+    if (!url.trim()) {
+      toast.error("URL is required.");
+      return;
+    }
+    if (!screenshotFile && !screenshotPreview) {
+      toast.error("Screenshot is required.");
       return;
     }
 
@@ -221,18 +225,19 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="url">URL <span className="text-xs text-muted-foreground">(optional if screenshot provided)</span></Label>
+            <Label htmlFor="url">URL <span className="text-xs text-destructive">*</span></Label>
             <Input
               id="url"
               type="url"
               placeholder="https://myproject.com"
+              required
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Screenshot <span className="text-xs text-muted-foreground">(optional if URL provided, max 5MB)</span></Label>
+            <Label>Screenshot <span className="text-xs text-destructive">*</span> <span className="text-xs text-muted-foreground">(max 5MB)</span></Label>
             {screenshotPreview ? (
               <div className="relative inline-block">
                 <img

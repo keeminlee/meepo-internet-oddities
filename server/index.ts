@@ -674,11 +674,15 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      // Validate URL-or-screenshot proof requirement
+      // Validate URL + screenshot required
       const external_url = (body.external_url || "").trim();
       const screenshot_url = (body.screenshot_url || "").trim();
-      if (!external_url && !screenshot_url) {
-        json(res, { error: "At least one of URL or screenshot is required" }, 400);
+      if (!external_url) {
+        json(res, { error: "URL is required" }, 400);
+        return;
+      }
+      if (!screenshot_url) {
+        json(res, { error: "Screenshot is required" }, 400);
         return;
       }
 
@@ -714,7 +718,7 @@ const server = createServer(async (req, res) => {
         screenshot_url,
         external_url,
         tags,
-        source_type: external_url && screenshot_url ? "both" : external_url ? "url" : "screenshot",
+        source_type: "both",
         status: "Live",
         clicks_sent: 0,
         about: "",
@@ -884,11 +888,15 @@ const server = createServer(async (req, res) => {
       // Update source_type based on current proof state
       const hasUrl = !!project.external_url;
       const hasScreenshot = !!project.screenshot_url;
-      if (!hasUrl && !hasScreenshot) {
-        json(res, { error: "At least one of URL or screenshot is required" }, 400);
+      if (!hasUrl) {
+        json(res, { error: "URL is required" }, 400);
         return;
       }
-      project.source_type = hasUrl && hasScreenshot ? "both" : hasUrl ? "url" : "screenshot";
+      if (!hasScreenshot) {
+        json(res, { error: "Screenshot is required" }, 400);
+        return;
+      }
+      project.source_type = "both";
       project.updated_at = new Date().toISOString();
 
       writeDB(db);
