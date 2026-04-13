@@ -186,7 +186,8 @@
       "why_i_made_this": "I wanted to make something that felt like looking out a window. No clicks, no decisions. Just a color.",
       "featured": true,
       "approved": true,
-      "created_at": "2026-03-15"
+      "created_at": "2026-03-15",
+      "is_demo": true
     },
     {
       "id": "2",
@@ -209,7 +210,8 @@
       "why_i_made_this": "My friend in Tokyo kept telling me about the rain. I wanted to just know, instantly, without opening a weather app.",
       "featured": true,
       "approved": true,
-      "created_at": "2026-03-20"
+      "created_at": "2026-03-20",
+      "is_demo": true
     },
     {
       "id": "3",
@@ -232,7 +234,8 @@
       "why_i_made_this": "I apologize too much. I wanted AI to apologize better than me.",
       "featured": true,
       "approved": true,
-      "created_at": "2026-02-28"
+      "created_at": "2026-02-28",
+      "is_demo": true
     },
     {
       "id": "4",
@@ -255,7 +258,8 @@
       "why_i_made_this": "Every font picker sorts by popularity. None sort by feeling. That seemed wrong.",
       "featured": true,
       "approved": true,
-      "created_at": "2026-03-10"
+      "created_at": "2026-03-10",
+      "is_demo": true
     },
     {
       "id": "5",
@@ -278,7 +282,8 @@
       "why_i_made_this": "My cat is named Breadstick and I needed external validation.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-03-25"
+      "created_at": "2026-03-25",
+      "is_demo": true
     },
     {
       "id": "6",
@@ -297,11 +302,12 @@
       ],
       "status": "Seeking Users",
       "clicks_sent": 892,
-      "about": "A living worldbuilding tool where you create civilizations, histories, and characters — and AI fills in the gaps. Every world is shareable and forkable.",
+      "about": "A living worldbuilding tool where you create civilizations, histories, and characters ??and AI fills in the gaps. Every world is shareable and forkable.",
       "why_i_made_this": "I've been building fictional worlds in notebooks since I was 12. I wanted to see what happens when AI helps.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-03-05"
+      "created_at": "2026-03-05",
+      "is_demo": true
     },
     {
       "id": "7",
@@ -324,7 +330,8 @@
       "why_i_made_this": "My neighbor's WiFi is called 'FBI Surveillance Van 2' and I needed to escalate.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-01"
+      "created_at": "2026-04-01",
+      "is_demo": true
     },
     {
       "id": "8",
@@ -347,7 +354,8 @@
       "why_i_made_this": "I was thinking about r/place but slower. What if collective art took patience?",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-05"
+      "created_at": "2026-04-05",
+      "is_demo": true
     },
     {
       "id": "9",
@@ -370,7 +378,8 @@
       "why_i_made_this": "I had 7 meetings in one day. Something had to give.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-03-18"
+      "created_at": "2026-03-18",
+      "is_demo": true
     },
     {
       "id": "10",
@@ -389,11 +398,12 @@
       ],
       "status": "Prototype",
       "clicks_sent": 1890,
-      "about": "Type a place that doesn't exist — 'a library on the moon', 'a train station in a cloud' — and hear what it sounds like. Generated with AI audio.",
+      "about": "Type a place that doesn't exist ??'a library on the moon', 'a train station in a cloud' ??and hear what it sounds like. Generated with AI audio.",
       "why_i_made_this": "I wanted background noise that didn't exist yet.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-03-28"
+      "created_at": "2026-03-28",
+      "is_demo": true
     },
     {
       "id": "11",
@@ -412,11 +422,12 @@
       ],
       "status": "Live",
       "clicks_sent": 5670,
-      "about": "Not a code review — a vibe review. It judges your project's name, description, emoji usage, badge addiction, and whether your README has personality.",
+      "about": "Not a code review ??a vibe review. It judges your project's name, description, emoji usage, badge addiction, and whether your README has personality.",
       "why_i_made_this": "Too many READMEs are just auto-generated templates. I wanted to celebrate the weird ones.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-02"
+      "created_at": "2026-04-02",
+      "is_demo": true
     },
     {
       "id": "12",
@@ -435,11 +446,12 @@
       ],
       "status": "Live",
       "clicks_sent": 8934,
-      "about": "One button. One compliment. But they're not generic — they're oddly specific and feel like they were written by a friend who really sees you.",
+      "about": "One button. One compliment. But they're not generic ??they're oddly specific and feel like they were written by a friend who really sees you.",
       "why_i_made_this": "I was having a bad day and wrote the compliment I wanted to hear. Then I made 500 more.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-03-22"
+      "created_at": "2026-03-22",
+      "is_demo": true
     },
     {
       "id": "13",
@@ -462,7 +474,8 @@
       "why_i_made_this": "Normal timers don't stress me out enough. I needed emotional consequences.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-08"
+      "created_at": "2026-04-08",
+      "is_demo": true
     },
     {
       "id": "14",
@@ -481,11 +494,12 @@
       ],
       "status": "Seeking Collaborator",
       "clicks_sent": 445,
-      "about": "A curated collection of digital artifacts — screenshots of deleted tweets, AI-generated objects, website fossils, and things that only ever existed as pixels.",
+      "about": "A curated collection of digital artifacts ??screenshots of deleted tweets, AI-generated objects, website fossils, and things that only ever existed as pixels.",
       "why_i_made_this": "The internet is full of beautiful ephemeral things. I wanted to put some in a glass case.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-10"
+      "created_at": "2026-04-10",
+      "is_demo": true
     },
     {
       "id": "15",
@@ -508,7 +522,8 @@
       "why_i_made_this": "I kept sending emails that sounded like a press release. I needed an intervention.",
       "featured": false,
       "approved": true,
-      "created_at": "2026-04-06"
+      "created_at": "2026-04-06",
+      "is_demo": true
     },
     {
       "id": "ba6b110c-4775-429b-9d20-75a8602e7f8e",
@@ -536,5 +551,7 @@
       "contact_email": "keemin7@gmail.com",
       "submitted_at": "2026-04-12T21:38:02.329Z"
     }
-  ]
+  ],
+  "users": [],
+  "sessions": []
 }

@@ -38,6 +38,7 @@ export const TAG_OPTIONS = [
   "Prototype",
   "Playful",
   "Personal",
+  "Meepo",
 ] as const;
 
 export type ProjectStatus = (typeof STATUS_OPTIONS)[number];

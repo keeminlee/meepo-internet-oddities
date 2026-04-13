@@ -12,6 +12,7 @@ const TAG_COLORS: Record<string, string> = {
   Prototype: "bg-tag-blue/15 text-tag-blue border-tag-blue/30",
   Playful: "bg-tag-yellow/15 text-tag-yellow border-tag-yellow/30",
   Personal: "bg-tag-pink/15 text-tag-pink border-tag-pink/30",
+  Meepo: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
 };
 
 interface TagBadgeProps {
@@ -19,19 +20,21 @@ interface TagBadgeProps {
   onClick?: () => void;
   active?: boolean;
   size?: "sm" | "md";
+  disabled?: boolean;
 }
 
-export function TagBadge({ tag, onClick, active, size = "sm" }: TagBadgeProps) {
+export function TagBadge({ tag, onClick, active, size = "sm", disabled }: TagBadgeProps) {
   const colors = TAG_COLORS[tag] || "bg-muted text-muted-foreground border-border";
   const sizeClasses = size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm";
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={`inline-flex items-center rounded-full border font-medium transition-all duration-200 ${sizeClasses} ${colors} ${
         active ? "ring-2 ring-primary/40 scale-105" : ""
-      } ${onClick ? "cursor-pointer hover:scale-105" : "cursor-default"}`}
+      } ${disabled ? "opacity-40 cursor-not-allowed" : onClick ? "cursor-pointer hover:scale-105" : "cursor-default"}`}
     >
       {tag}
     </button>

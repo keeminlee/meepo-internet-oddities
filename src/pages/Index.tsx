@@ -4,6 +4,8 @@ import { ProjectTag } from "@/lib/constants";
 import { ProjectCard } from "@/components/ProjectCard";
 import { TagFilter } from "@/components/TagFilter";
 import { SubmitDialog } from "@/components/SubmitDialog";
+import { AuthButton } from "@/components/AuthButton";
+import { useAuth } from "@/hooks/use-auth";
 import {
   getFeaturedProjects,
   getNewestProjects,
@@ -33,6 +35,7 @@ function ProjectGrid({ items, title, subtitle }: { items: any[]; title: string; 
 export default function Index() {
   const [activeTag, setActiveTag] = useState<ProjectTag | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const featured = getFeaturedProjects();
   const newest = getNewestProjects(6);
@@ -47,10 +50,13 @@ export default function Index() {
           <span className="font-display text-xl font-bold tracking-tight">
             {BRAND.name} <span className="text-primary">·</span>
           </span>
-          <Button size="sm" onClick={() => setSubmitOpen(true)}>
-            <Sparkles className="h-4 w-4" />
-            Post your project
-          </Button>
+          <div className="flex items-center gap-3">
+            <AuthButton />
+            <Button size="sm" onClick={() => setSubmitOpen(true)}>
+              <Sparkles className="h-4 w-4" />
+              Post your meep
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -73,7 +79,7 @@ export default function Index() {
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Button size="lg" onClick={() => setSubmitOpen(true)}>
               <Sparkles className="h-4 w-4" />
-              Post your project
+              Post your meep
             </Button>
             <Button
               size="lg"
@@ -107,7 +113,7 @@ export default function Index() {
           <ProjectGrid
             items={filtered}
             title={`Tagged "${activeTag}"`}
-            subtitle={`${filtered.length} project${filtered.length !== 1 ? "s" : ""}`}
+            subtitle={`${filtered.length} meep${filtered.length !== 1 ? "s" : ""}`}
           />
         ) : (
           <>
@@ -124,7 +130,7 @@ export default function Index() {
             <ProjectGrid
               items={seeking}
               title="Needs first believers"
-              subtitle="Projects seeking curious users and collaborators"
+              subtitle="Meeps seeking curious users and collaborators"
             />
           </>
         )}

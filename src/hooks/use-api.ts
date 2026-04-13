@@ -4,7 +4,7 @@ import type { ProjectWithCreator, Creator } from "@/types";
 const API = "/api";
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -64,7 +64,7 @@ export function useTrackClick() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (slug: string) => {
-      const res = await fetch(`${API}/projects/${slug}/click`, { method: "POST" });
+      const res = await fetch(`${API}/projects/${slug}/click`, { method: "POST", credentials: "include" });
       if (!res.ok) throw new Error("Click tracking failed");
       return res.json() as Promise<{ clicks_sent: number; external_url: string }>;
     },
@@ -76,29 +76,30 @@ export function useTrackClick() {
 
 // ── Submission ──────────────────────────────────────────
 
+export function useMyProjects() {
+  return useQuery<ProjectWithCreator[]>({
+    queryKey: ["projects", "mine"],
+    queryFn: () => fetchJSON(`${API}/my-projects`),
+  });
+}
+
 interface SubmitPayload {
   name: string;
-  external_url: string;
   one_line_pitch: string;
+  external_url?: string;
   screenshot_url?: string;
-  built_with: string;
-  tags?: string[];
-  status?: string;
-  about?: string;
   why_i_made_this?: string;
-  creator_name: string;
-  creator_handle?: string;
-  creator_bio?: string;
-  creator_thesis?: string;
-  contact_email?: string;
+  tags?: string[];
 }
 
 export function useSubmitProject() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: SubmitPayload) => {
       const res = await fetch(`${API}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -106,6 +107,42 @@ export function useSubmitProject() {
         throw new Error(err.error || "Submission failed");
       }
       return res.json() as Promise<{ id: string; slug: string; message: string }>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+interface UpdatePayload {
+  slug: string;
+  name?: string;
+  one_line_pitch?: string;
+  external_url?: string;
+  screenshot_url?: string;
+  why_i_made_this?: string;
+  tags?: string[];
+}
+
+export function useUpdateProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ slug, ...payload }: UpdatePayload) => {
+      const res = await fetch(`${API}/projects/${slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Update failed");
+      }
+      return res.json() as Promise<ProjectWithCreator>;
+    },
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["project", variables.slug] });
     },
   });
 }

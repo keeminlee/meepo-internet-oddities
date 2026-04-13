@@ -13,7 +13,7 @@ export function ProjectCard({ project }: { project: Project }) {
       className="group block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
     >
       {/* Screenshot */}
-      <div className="overflow-hidden">
+      <div className="relative overflow-hidden">
         <AspectRatio ratio={16 / 9}>
           <img
             src={project.screenshot}
@@ -22,6 +22,11 @@ export function ProjectCard({ project }: { project: Project }) {
             loading="lazy"
           />
         </AspectRatio>
+        {project.isDemo && (
+          <span className="absolute top-2 right-2 rounded bg-muted/80 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
+            Demo
+          </span>
+        )}
       </div>
 
       {/* Content */}

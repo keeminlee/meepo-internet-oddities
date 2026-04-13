@@ -19,6 +19,7 @@ export interface Project {
   whyMade?: string;
   whyCool?: string;
   featured?: boolean;
+  isDemo?: boolean;
   createdAt: string;
 }
 
@@ -41,6 +42,7 @@ export const projects: Project[] = [
     whyMade: "I wanted to make something that felt like looking out a window. No clicks, no decisions. Just a color.",
     whyCool: "It's the anti-app. People use it as a screensaver, a mood ring, a conversation starter.",
     featured: true,
+    isDemo: true,
     createdAt: "2026-03-15",
   },
   {
@@ -59,6 +61,7 @@ export const projects: Project[] = [
     about: "Checks real weather API data for Tokyo and displays a big YES or NO. Has a subtle rain animation when it is, in fact, raining.",
     whyMade: "My friend in Tokyo kept telling me about the rain. I wanted to just know, instantly, without opening a weather app.",
     featured: true,
+    isDemo: true,
     createdAt: "2026-03-20",
   },
   {
@@ -79,6 +82,7 @@ export const projects: Project[] = [
     whyMade: "I apologize too much. I wanted AI to apologize better than me.",
     whyCool: "People are sharing these at work and nobody can tell if they're real.",
     featured: true,
+    isDemo: true,
     createdAt: "2026-02-28",
   },
   {
@@ -97,6 +101,7 @@ export const projects: Project[] = [
     about: "An emotional font recommender. Describe how you feel, and it suggests a Google Font pairing with a color palette and sample layout.",
     whyMade: "Every font picker sorts by popularity. None sort by feeling. That seemed wrong.",
     featured: true,
+    isDemo: true,
     createdAt: "2026-03-10",
   },
   {
@@ -114,6 +119,7 @@ export const projects: Project[] = [
     clicksSent: 12450,
     about: "An AI judge evaluates your pet's name on creativity, phonetics, and 'would I yell this at a park' factor. Surprisingly addictive.",
     whyMade: "My cat is named Breadstick and I needed external validation.",
+    isDemo: true,
     createdAt: "2026-03-25",
   },
   {
@@ -133,6 +139,7 @@ export const projects: Project[] = [
     about: "A living worldbuilding tool where you create civilizations, histories, and characters — and AI fills in the gaps. Every world is shareable and forkable.",
     whyMade: "I've been building fictional worlds in notebooks since I was 12. I wanted to see what happens when AI helps.",
     whyCool: "People are building entire RPG settings, novel backdrops, and classroom exercises with it.",
+    isDemo: true,
     createdAt: "2026-03-05",
   },
   {
@@ -149,6 +156,7 @@ export const projects: Project[] = [
     clicksSent: 3201,
     about: "Pick a vibe (threatening, wholesome, nerdy, unhinged) and get WiFi name suggestions. Copy to clipboard. Annoy your neighbors.",
     whyMade: "My neighbor's WiFi is called 'FBI Surveillance Van 2' and I needed to escalate.",
+    isDemo: true,
     createdAt: "2026-04-01",
   },
   {
@@ -166,6 +174,7 @@ export const projects: Project[] = [
     clicksSent: 567,
     about: "A 256x256 canvas that evolves one pixel at a time. No accounts, just your daily pixel. Watch patterns emerge over weeks.",
     whyMade: "I was thinking about r/place but slower. What if collective art took patience?",
+    isDemo: true,
     createdAt: "2026-04-05",
   },
   {
@@ -184,6 +193,7 @@ export const projects: Project[] = [
     clicksSent: 9102,
     about: "Slide a scale from 'mildly inconvenient' to 'absolutely cannot attend' and get a perfectly worded Slack message. Includes follow-up responses.",
     whyMade: "I had 7 meetings in one day. Something had to give.",
+    isDemo: true,
     createdAt: "2026-03-18",
   },
   {
@@ -202,6 +212,7 @@ export const projects: Project[] = [
     about: "Type a place that doesn't exist — 'a library on the moon', 'a train station in a cloud' — and hear what it sounds like. Generated with AI audio.",
     whyMade: "I wanted background noise that didn't exist yet.",
     whyCool: "People use it for writing, sleeping, and just vibing.",
+    isDemo: true,
     createdAt: "2026-03-28",
   },
   {
@@ -219,6 +230,7 @@ export const projects: Project[] = [
     clicksSent: 5670,
     about: "Not a code review — a vibe review. It judges your project's name, description, emoji usage, badge addiction, and whether your README has personality.",
     whyMade: "Too many READMEs are just auto-generated templates. I wanted to celebrate the weird ones.",
+    isDemo: true,
     createdAt: "2026-04-02",
   },
   {
@@ -238,6 +250,7 @@ export const projects: Project[] = [
     whyMade: "I was having a bad day and wrote the compliment I wanted to hear. Then I made 500 more.",
     whyCool: "People keep coming back. Some screenshot their favorites. Some cry (in a good way).",
     featured: false,
+    isDemo: true,
     createdAt: "2026-03-22",
   },
   {
@@ -255,6 +268,7 @@ export const projects: Project[] = [
     clicksSent: 2103,
     about: "Set a deadline. The timer starts calm. As time runs out, the page gets redder, the font gets bigger, and the messages get more unhinged.",
     whyMade: "Normal timers don't stress me out enough. I needed emotional consequences.",
+    isDemo: true,
     createdAt: "2026-04-08",
   },
   {
@@ -274,6 +288,7 @@ export const projects: Project[] = [
     about: "A curated collection of digital artifacts — screenshots of deleted tweets, AI-generated objects, website fossils, and things that only ever existed as pixels.",
     whyMade: "The internet is full of beautiful ephemeral things. I wanted to put some in a glass case.",
     whyCool: "It makes you think about what 'real' means when everything is digital.",
+    isDemo: true,
     createdAt: "2026-04-10",
   },
   {
@@ -291,6 +306,7 @@ export const projects: Project[] = [
     clicksSent: 1230,
     about: "POST any text and get back a vibe score, vibe category, and suggested improvements. Works great for checking if your email sounds too corporate.",
     whyMade: "I kept sending emails that sounded like a press release. I needed an intervention.",
+    isDemo: true,
     createdAt: "2026-04-06",
   },
 ];

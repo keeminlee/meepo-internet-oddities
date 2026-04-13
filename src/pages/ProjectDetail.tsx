@@ -15,7 +15,7 @@ export default function ProjectDetail() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="font-display text-3xl font-bold">Project not found</h1>
+          <h1 className="font-display text-3xl font-bold">Meep not found</h1>
           <Link to="/" className="text-primary hover:underline">← Back to {BRAND.name}</Link>
         </div>
       </div>
@@ -84,7 +84,7 @@ export default function ProjectDetail() {
 
           <Button size="lg" asChild>
             <a href={project.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" /> Visit project
+              <ExternalLink className="h-4 w-4" /> Visit meep
             </a>
           </Button>
         </div>
