@@ -11,6 +11,8 @@ export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: project, isLoading } = useProject(slug || "");
   const trackClick = useTrackClick();
+  const [screenshotError, setScreenshotError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   if (isLoading) {
     return (
@@ -33,8 +35,6 @@ export default function ProjectDetail() {
 
   const creatorName = project.creator?.display_name || "Unknown";
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
-  const [screenshotError, setScreenshotError] = useState(false);
-  const [avatarError, setAvatarError] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">

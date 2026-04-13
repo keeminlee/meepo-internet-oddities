@@ -25,7 +25,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/demo" element={<Demo />} />
-            <Route path="/project/:slug" element={<ProjectDetail />} />
+            <Route path="/meep/:slug" element={<ProjectDetail />} />
             <Route path="/my-meeps" element={<MyMeeps />} />
             <Route path="/review" element={<ReviewQueue />} />
             <Route path="*" element={<NotFound />} />

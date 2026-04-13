@@ -35,3 +35,6 @@ server/uploads/
 
 # Runtime database (use db.seed.json for fresh installs)
 server/db.json
+
+# OMC runtime state (per-machine: plans, logs, sessions)
+.omc/

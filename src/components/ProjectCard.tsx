@@ -15,7 +15,7 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
 
   return (
     <Link
-      to={`/project/${project.slug}`}
+      to={`/meep/${project.slug}`}
       className="group block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
     >
       {/* Screenshot */}
