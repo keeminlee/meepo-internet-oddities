@@ -17,11 +17,11 @@ echo "[runtime] installing deploy hook"
 sudo install -m 0755 "$APP_DIR/deploy/deploy-mio.sh" /usr/local/bin/deploy-mio
 
 echo "[runtime] ensuring $ENV_DIR exists"
-sudo install -d -m 0750 "$ENV_DIR"
+sudo install -d -m 0750 -g meepo "$ENV_DIR"
 
 if [[ ! -f "$ENV_DIR/mio-web.env" ]]; then
   echo "[runtime] creating $ENV_DIR/mio-web.env from template"
-  sudo install -m 0640 "$APP_DIR/deploy/mio-web.env.example" "$ENV_DIR/mio-web.env"
+  sudo install -m 0640 -g meepo "$APP_DIR/deploy/mio-web.env.example" "$ENV_DIR/mio-web.env"
 fi
 
 echo "[runtime] reloading systemd"
