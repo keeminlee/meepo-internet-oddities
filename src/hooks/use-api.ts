@@ -60,6 +60,24 @@ export function useCreator(handle: string) {
 
 // ── Click tracking ──────────────────────────────────────
 
+export function useUpdateProfile() {
+  return useMutation({
+    mutationFn: async (data: { display_name: string }) => {
+      const res = await fetch(`${API}/auth/profile`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Update failed");
+      }
+      return res.json() as Promise<{ ok: boolean; user: any }>;
+    },
+  });
+}
+
 export function useTrackClick() {
   const qc = useQueryClient();
   return useMutation({
@@ -143,6 +161,59 @@ export function useUpdateProject() {
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
       qc.invalidateQueries({ queryKey: ["project", variables.slug] });
+    },
+  });
+}
+
+// ── Review queue (MEEPO_WRITERS) ────────────────────────
+
+export function useReviewQueue() {
+  return useQuery<ProjectWithCreator[]>({
+    queryKey: ["review"],
+    queryFn: () => fetchJSON(`${API}/review`),
+  });
+}
+
+export function useApproveProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      const res = await fetch(`${API}/review/${slug}/approve`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Approve failed");
+      }
+      return res.json() as Promise<ProjectWithCreator>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["review"] });
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useRejectProject() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ slug, reason }: { slug: string; reason?: string }) => {
+      const res = await fetch(`${API}/review/${slug}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Reject failed");
+      }
+      return res.json() as Promise<{ ok: boolean; slug: string }>;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["review"] });
+      qc.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { BRAND } from "@/lib/constants";
 import { ProjectTag } from "@/lib/constants";
 import { ProjectCard } from "@/components/ProjectCard";
@@ -6,14 +7,9 @@ import { TagFilter } from "@/components/TagFilter";
 import { SubmitDialog } from "@/components/SubmitDialog";
 import { AuthButton } from "@/components/AuthButton";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  getFeaturedProjects,
-  getNewestProjects,
-  getSeekingUsersProjects,
-  filterByTag,
-} from "@/data/projects";
+import { useFeaturedProjects, useNewestProjects, useProjects } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowDown } from "lucide-react";
+import { Sparkles, ArrowDown, ClipboardList } from "lucide-react";
 
 function ProjectGrid({ items, title, subtitle }: { items: any[]; title: string; subtitle?: string }) {
   if (items.length === 0) return null;
@@ -35,12 +31,11 @@ function ProjectGrid({ items, title, subtitle }: { items: any[]; title: string; 
 export default function Index() {
   const [activeTag, setActiveTag] = useState<ProjectTag | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isMeepoWriter } = useAuth();
 
-  const featured = getFeaturedProjects();
-  const newest = getNewestProjects(6);
-  const seeking = getSeekingUsersProjects();
-  const filtered = activeTag ? filterByTag(activeTag) : null;
+  const { data: featured = [], isLoading: loadingFeatured } = useFeaturedProjects();
+  const { data: newest = [], isLoading: loadingNewest } = useNewestProjects(6);
+  const { data: filtered } = useProjects(activeTag || undefined);
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,6 +46,15 @@ export default function Index() {
             {BRAND.name} <span className="text-primary">·</span>
           </span>
           <div className="flex items-center gap-3">
+            {isMeepoWriter && (
+              <Link
+                to="/review"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ClipboardList className="h-4 w-4" />
+                Review
+              </Link>
+            )}
             <AuthButton />
             <Button size="sm" onClick={() => setSubmitOpen(true)}>
               <Sparkles className="h-4 w-4" />
@@ -109,28 +113,23 @@ export default function Index() {
         </div>
 
         {/* Filtered view */}
-        {filtered ? (
+        {activeTag ? (
           <ProjectGrid
-            items={filtered}
+            items={filtered || []}
             title={`Tagged "${activeTag}"`}
-            subtitle={`${filtered.length} meep${filtered.length !== 1 ? "s" : ""}`}
+            subtitle={`${(filtered || []).length} meep${(filtered || []).length !== 1 ? "s" : ""}`}
           />
         ) : (
           <>
             <ProjectGrid
               items={featured}
-              title="Featured transmissions"
+              title="Featured meeps"
               subtitle="Curated for voice, taste, and singularity"
             />
             <ProjectGrid
               items={newest}
-              title="Fresh arrivals"
+              title="Fresh meeps"
               subtitle="New artifacts from strange minds"
-            />
-            <ProjectGrid
-              items={seeking}
-              title="Needs first believers"
-              subtitle="Meeps seeking curious users and collaborators"
             />
           </>
         )}

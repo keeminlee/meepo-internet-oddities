@@ -6,7 +6,7 @@
 
 ## Product summary
 
-Meepo is a creator platform for "authored software" — a curated directory of weird, personal, AI-built web artifacts with visible maker identities. The frontend is a React SPA (Vite + React 18 + Tailwind + shadcn/ui). The backend is a zero-dependency Node HTTP server reading/writing a flat JSON file (`server/db.json`). Brand: "Strange minds behind strange software."
+Meepo is a creator platform for "authored software" — a curated directory of distinctive, personal, AI-built web artifacts with visible maker identities. The frontend is a React SPA (Vite + React 18 + Tailwind + shadcn/ui). The backend is a zero-dependency Node HTTP server reading/writing a flat JSON file (`server/db.json`). Brand: "The Era of Software-as-a-Society."
 
 ---
 

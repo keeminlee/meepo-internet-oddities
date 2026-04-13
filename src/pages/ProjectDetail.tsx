@@ -1,7 +1,6 @@
 import { useParams, Link } from "react-router-dom";
-import { getProjectBySlug } from "@/data/projects";
+import { useProject, useTrackClick } from "@/hooks/use-api";
 import { StatusBadge } from "@/components/StatusBadge";
-import { BuiltWithBadge } from "@/components/BuiltWithBadge";
 import { TagBadge } from "@/components/TagBadge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, MousePointerClick } from "lucide-react";
@@ -9,7 +8,16 @@ import { BRAND } from "@/lib/constants";
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const project = slug ? getProjectBySlug(slug) : undefined;
+  const { data: project, isLoading } = useProject(slug || "");
+  const trackClick = useTrackClick();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
@@ -21,6 +29,9 @@ export default function ProjectDetail() {
       </div>
     );
   }
+
+  const creatorName = project.creator?.display_name || "Unknown";
+  const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,39 +50,41 @@ export default function ProjectDetail() {
         </Link>
 
         {/* Hero image */}
-        <div className="overflow-hidden rounded-xl border border-border">
-          <img
-            src={project.screenshot}
-            alt={project.name}
-            className="w-full object-cover"
-            style={{ maxHeight: "480px" }}
-          />
-        </div>
+        {project.screenshot_url && (
+          <div className="overflow-hidden rounded-xl border border-border">
+            <img
+              src={project.screenshot_url}
+              alt={project.name}
+              className="w-full object-cover"
+              style={{ maxHeight: "480px" }}
+            />
+          </div>
+        )}
 
         {/* Header */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <StatusBadge status={project.status} />
-            <BuiltWithBadge builtWith={project.builtWith} />
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <MousePointerClick className="h-4 w-4" />
-              <span className="font-semibold">{project.clicksSent.toLocaleString()}</span> clicks sent
+              <span className="font-semibold">{(project.clicks_sent || 0).toLocaleString()}</span> clicks sent
             </div>
           </div>
 
           <h1 className="font-display text-4xl font-bold md:text-5xl">{project.name}</h1>
-          <p className="text-xl text-muted-foreground">{project.pitch}</p>
+          <p className="text-xl text-muted-foreground">{project.one_line_pitch}</p>
 
           {/* Maker identity */}
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-              {project.makerName.charAt(0)}
-            </div>
+            {project.creator?.avatar_url ? (
+              <img src={project.creator.avatar_url} alt={creatorName} className="h-10 w-10 rounded-full" />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                {creatorName.charAt(0)}
+              </div>
+            )}
             <div>
-              <div className="font-medium">{project.makerName} {project.makerHandle && <span className="text-sm text-muted-foreground">{project.makerHandle}</span>}</div>
-              {project.makerBio && (
-                <div className="text-sm text-muted-foreground">{project.makerBio}</div>
-              )}
+              <div className="font-medium">{creatorName} {creatorHandle && <span className="text-sm text-muted-foreground">{creatorHandle}</span>}</div>
             </div>
           </div>
 
@@ -82,32 +95,33 @@ export default function ProjectDetail() {
             ))}
           </div>
 
-          <Button size="lg" asChild>
-            <a href={project.url} target="_blank" rel="noopener noreferrer">
+          {project.external_url && (
+            <Button
+              size="lg"
+              onClick={() => {
+                if (slug) trackClick.mutate(slug);
+                window.open(project.external_url, "_blank", "noopener,noreferrer");
+              }}
+            >
               <ExternalLink className="h-4 w-4" /> Visit meep
-            </a>
-          </Button>
+            </Button>
+          )}
         </div>
 
         {/* Sections */}
         <div className="space-y-8 border-t border-border pt-8">
-          <div className="space-y-2">
-            <h2 className="font-display text-xl font-bold">Artifact note</h2>
-            <p className="text-muted-foreground leading-relaxed">{project.about}</p>
-          </div>
-
-          {project.whyMade && (
-            <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
-              <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
-              <p className="text-muted-foreground leading-relaxed italic">"{project.whyMade}"</p>
-              <p className="text-sm font-medium">— {project.makerName}</p>
+          {project.about && (
+            <div className="space-y-2">
+              <h2 className="font-display text-xl font-bold">Artifact note</h2>
+              <p className="text-muted-foreground leading-relaxed">{project.about}</p>
             </div>
           )}
 
-          {project.whyCool && (
-            <div className="space-y-2">
-              <h2 className="font-display text-xl font-bold">Why it's cool</h2>
-              <p className="text-muted-foreground leading-relaxed">{project.whyCool}</p>
+          {project.why_i_made_this && (
+            <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
+              <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
+              <p className="text-muted-foreground leading-relaxed italic">"{project.why_i_made_this}"</p>
+              <p className="text-sm font-medium">— {creatorName}</p>
             </div>
           )}
         </div>

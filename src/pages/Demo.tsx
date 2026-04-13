@@ -1,9 +1,42 @@
 import { BRAND } from "@/lib/constants";
 import { ProjectCard } from "@/components/ProjectCard";
 import { projects } from "@/data/projects";
+import type { ProjectWithCreator } from "@/types";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/** Map static demo data shape → API shape so ProjectCard works */
+function toApiShape(p: (typeof projects)[number]): ProjectWithCreator {
+  return {
+    id: p.id,
+    creator_id: "",
+    slug: p.slug,
+    name: p.name,
+    project_avatar_url: "",
+    one_line_pitch: p.pitch,
+    screenshot_url: p.screenshot,
+    external_url: p.url,
+    status: p.status,
+    tags: p.tags,
+    built_with: p.builtWith,
+    why_i_made_this: p.whyMade || "",
+    about: p.about,
+    clicks_sent: p.clicksSent,
+    featured: p.featured || false,
+    approved: true,
+    created_at: p.createdAt,
+    creator: {
+      id: "",
+      handle: (p.makerHandle || "").replace("@", ""),
+      display_name: p.makerName,
+      avatar_url: "",
+      bio: p.makerBio || "",
+      creative_thesis: "",
+      links: {},
+    },
+  };
+}
 
 export default function Demo() {
   return (
@@ -48,7 +81,7 @@ export default function Demo() {
       <main className="container mx-auto space-y-6 px-4 pb-20">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} />
+            <ProjectCard key={p.id} project={toApiShape(p)} />
           ))}
         </div>
       </main>

@@ -8,6 +8,7 @@ import { HandleSetup } from "@/components/HandleSetup";
 import Index from "./pages/Index";
 import ProjectDetail from "./pages/ProjectDetail";
 import MyMeeps from "./pages/MyMeeps";
+import ReviewQueue from "./pages/ReviewQueue";
 import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/demo" element={<Demo />} />
             <Route path="/project/:slug" element={<ProjectDetail />} />
             <Route path="/my-meeps" element={<MyMeeps />} />
+            <Route path="/review" element={<ReviewQueue />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

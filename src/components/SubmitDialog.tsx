@@ -157,7 +157,7 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
           why_i_made_this: whyIMadeThis.trim() || undefined,
           tags: selectedTags.length > 0 ? selectedTags : undefined,
         });
-        toast.success("Meep submitted! We'll review it soon. 🎉");
+        toast.success("Meep submitted! 🎉");
       }
       resetForm();
       onOpenChange(false);
@@ -174,7 +174,7 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">{isEditMode ? "Edit your meep" : "Post your meep"}</DialogTitle>
           <DialogDescription>
-            Built something personal, strange, or playful? Publish the artifact and maker story in under 2 minutes.
+            Built something personal, distinctive, or playful? Publish the artifact and maker story in under 2 minutes.
           </DialogDescription>
         </DialogHeader>
 
@@ -196,7 +196,7 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
             <Label htmlFor="name">Meep name</Label>
             <Input
               id="name"
-              placeholder="My weird little thing"
+              placeholder="My latest internet oddity"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -212,7 +212,7 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
             </Label>
             <Input
               id="pitch"
-              placeholder="It does this one strange thing..."
+              placeholder="A distinctive corner of the internet built my way..."
               required
               maxLength={PITCH_MAX}
               value={pitch}
@@ -274,7 +274,7 @@ export function SubmitDialog({ open, onOpenChange, editMeep }: SubmitDialogProps
             </Label>
             <Textarea
               id="whyMade"
-              placeholder="I was bored at 2am and..."
+              placeholder="I wanted to make something that felt unmistakably mine..."
               rows={3}
               maxLength={NOTE_MAX}
               value={whyIMadeThis}

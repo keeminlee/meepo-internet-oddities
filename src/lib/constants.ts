@@ -1,9 +1,9 @@
 export const BRAND = {
   name: "meepo",
-  tagline: "Strange minds behind strange software",
+  tagline: "Welcome to Software-as-a-Society",
   subtitle: "A creator platform for authored software",
   description:
-    "A public home for weird little AI-built artifacts where makers stay visible and software feels personal, playful, and artful.",
+    "A public home for distinctive internet oddities where makers stay visible and software feels personal, authentic, and unmistakably original.",
   url: "meepo.online",
   footerLine: "Meepo · authored software deserves a cultural home",
 } as const;

@@ -23,5 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment and secrets
+.env
+.npmrc
+
+# Graphify output
+graphify-out/
+
 # Uploaded images
 server/uploads/

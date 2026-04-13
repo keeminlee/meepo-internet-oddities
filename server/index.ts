@@ -20,7 +20,7 @@ if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true });
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "";
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret-change-me";
-const FRONTEND_URL = process.env.FRONTEND_URL || (IS_PROD ? "https://meepo.online" : `http://localhost:5173`);
+const FRONTEND_URL = process.env.FRONTEND_URL || (IS_PROD ? "https://meepo.online" : `http://localhost:8080`);
 const CALLBACK_URL = process.env.CALLBACK_URL || (IS_PROD ? "https://meepo.online/api/auth/github/callback" : `http://localhost:${PORT}/api/auth/github/callback`);
 
 // Meepo writer allowlist — comma-separated verified emails
@@ -270,7 +270,22 @@ function getUserFromSession(db: DB, req: any): DBUser | null {
 // ── Resolve project with creator ────────────────────────
 
 function resolveProject(db: DB, project: any): any {
-  const creator = db.creators.find((c: any) => c.id === project.creator_id);
+  // Check legacy creators table first, then fall back to users table
+  let creator = db.creators.find((c: any) => c.id === project.creator_id);
+  if (!creator) {
+    const user = db.users.find((u) => u.id === project.creator_id);
+    if (user) {
+      creator = {
+        id: user.id,
+        handle: user.handle || "",
+        display_name: user.display_name,
+        avatar_url: user.avatar_url || "",
+        bio: "",
+        creative_thesis: "",
+        links: {},
+      };
+    }
+  }
   return { ...project, creator: creator || null };
 }
 
@@ -302,6 +317,7 @@ const server = createServer(async (req, res) => {
       client_id: GITHUB_CLIENT_ID,
       redirect_uri: CALLBACK_URL,
       scope: "read:user user:email",
+      prompt: "consent",
     });
     res.writeHead(302, { Location: `https://github.com/login/oauth/authorize?${params}` });
     res.end();
@@ -510,7 +526,7 @@ const server = createServer(async (req, res) => {
 
     // GET /api/projects
     if (method === "GET" && path === "/api/projects") {
-      const approved = db.projects.filter((p: any) => p.approved);
+      const approved = db.projects.filter((p: any) => p.approved && !p.is_demo);
       const tag = url.searchParams.get("tag");
       const status = url.searchParams.get("status");
       let filtered = approved;
@@ -522,7 +538,7 @@ const server = createServer(async (req, res) => {
 
     // GET /api/projects/featured
     if (method === "GET" && path === "/api/projects/featured") {
-      const featured = db.projects.filter((p: any) => p.approved && p.featured);
+      const featured = db.projects.filter((p: any) => p.approved && p.featured && !p.is_demo);
       json(res, featured.map((p: any) => resolveProject(db, p)));
       return;
     }
@@ -531,7 +547,7 @@ const server = createServer(async (req, res) => {
     if (method === "GET" && path === "/api/projects/newest") {
       const count = Number(url.searchParams.get("count")) || 6;
       const newest = db.projects
-        .filter((p: any) => p.approved)
+        .filter((p: any) => p.approved && !p.is_demo)
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, count);
       json(res, newest.map((p: any) => resolveProject(db, p)));
@@ -603,6 +619,27 @@ const server = createServer(async (req, res) => {
       }
 
       user.handle = handle;
+      writeDB(db);
+      json(res, { ok: true, user });
+      return;
+    }
+
+    // PATCH /api/auth/profile — update profile fields for authenticated user
+    if (method === "PATCH" && path === "/api/auth/profile") {
+      const user = getUserFromSession(db, req);
+      if (!user) {
+        json(res, { error: "Authentication required" }, 401);
+        return;
+      }
+      const body = await parseBody(req);
+      const displayName = typeof body.display_name === "string" ? body.display_name.trim() : "";
+
+      if (!displayName || displayName.length < 1 || displayName.length > 50) {
+        json(res, { error: "Display name must be 1-50 characters" }, 400);
+        return;
+      }
+
+      user.display_name = displayName;
       writeDB(db);
       json(res, { ok: true, user });
       return;
@@ -683,7 +720,7 @@ const server = createServer(async (req, res) => {
         about: "",
         why_i_made_this: (body.why_i_made_this || "").trim().slice(0, 1000),
         featured: false,
-        approved: false, // requires manual approval
+        approved: false, // requires manual approval via /review page
         created_at: new Date().toISOString().split("T")[0],
       };
 
@@ -696,6 +733,72 @@ const server = createServer(async (req, res) => {
       writeDB(db);
 
       json(res, { id: submission.id, slug, message: "Submitted for review" }, 201);
+      return;
+    }
+
+    // ── Review queue routes (MEEPO_WRITERS only) ─────────
+
+    // GET /api/review — list pending (unapproved, non-rejected) meeps
+    if (method === "GET" && path === "/api/review") {
+      const user = getUserFromSession(db, req);
+      if (!user) {
+        json(res, { error: "Authentication required" }, 401);
+        return;
+      }
+      if (!isMeepoWriter(user.email)) {
+        json(res, { error: "Forbidden" }, 403);
+        return;
+      }
+      const pending = db.projects
+        .filter((p: any) => !p.approved && !p.rejected)
+        .map((p: any) => resolveProject(db, p));
+      json(res, pending);
+      return;
+    }
+
+    // POST /api/review/:slug/approve — approve a pending meep
+    const approveMatch = path.match(/^\/api\/review\/([a-z0-9-]+)\/approve$/);
+    if (method === "POST" && approveMatch) {
+      const user = getUserFromSession(db, req);
+      if (!user) {
+        json(res, { error: "Authentication required" }, 401);
+        return;
+      }
+      if (!isMeepoWriter(user.email)) {
+        json(res, { error: "Forbidden" }, 403);
+        return;
+      }
+      const slug = approveMatch[1];
+      const project = db.projects.find((p: any) => p.slug === slug);
+      if (!project) return notFound(res);
+      project.approved = true;
+      writeDB(db);
+      json(res, resolveProject(db, project));
+      return;
+    }
+
+    // POST /api/review/:slug/reject — soft-delete a pending meep
+    const rejectMatch = path.match(/^\/api\/review\/([a-z0-9-]+)\/reject$/);
+    if (method === "POST" && rejectMatch) {
+      const user = getUserFromSession(db, req);
+      if (!user) {
+        json(res, { error: "Authentication required" }, 401);
+        return;
+      }
+      if (!isMeepoWriter(user.email)) {
+        json(res, { error: "Forbidden" }, 403);
+        return;
+      }
+      const slug = rejectMatch[1];
+      const project = db.projects.find((p: any) => p.slug === slug);
+      if (!project) return notFound(res);
+      const body = await parseBody(req);
+      project.rejected = true;
+      project.rejection_reason = (body.reason || "").trim().slice(0, 500) || undefined;
+      project.rejected_at = new Date().toISOString();
+      project.rejected_by = user.id;
+      writeDB(db);
+      json(res, { ok: true, slug });
       return;
     }
 

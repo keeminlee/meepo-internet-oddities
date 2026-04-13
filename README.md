@@ -1,8 +1,8 @@
-# Meepo — Strange minds behind strange software
+# Meepo — The Era of Software-as-a-Society
 
 Meepo is a **creator platform for authored software**.
 
-This project is building a public home for weird little AI-built artifacts where:
+This project is building a public home for distinctive internet oddities where:
 - makers are visible,
 - taste and personality are the product  # ick
 - and software is treated like culture (not just SaaS).

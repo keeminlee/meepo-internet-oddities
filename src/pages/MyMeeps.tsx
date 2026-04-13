@@ -78,13 +78,18 @@ export default function MyMeeps() {
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         meep.approved
                           ? "bg-green-500/15 text-green-400"
-                          : "bg-yellow-500/15 text-yellow-400"
+                          : meep.rejected
+                            ? "bg-red-500/15 text-red-400"
+                            : "bg-yellow-500/15 text-yellow-400"
                       }`}
                     >
-                      {meep.approved ? "Approved" : "Pending"}
+                      {meep.approved ? "Approved" : meep.rejected ? "Rejected" : "Pending"}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">{meep.one_line_pitch}</p>
+                  {meep.rejected && meep.rejection_reason && (
+                    <p className="text-sm text-red-400/80 italic">Reason: {meep.rejection_reason}</p>
+                  )}
                   {meep.tags?.length > 0 && (
                     <div className="flex gap-1 pt-1">
                       {meep.tags.map((tag: any) => (

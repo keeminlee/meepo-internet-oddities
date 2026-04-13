@@ -541,8 +541,52 @@
       "about": "it do many ting",
       "why_i_made_this": "i love meepo",
       "featured": false,
-      "approved": false,
+      "approved": true,
       "created_at": "2026-04-12"
+    },
+    {
+      "id": "84c6d110-4976-44e4-ae1e-9199d2b7bee6",
+      "creator_id": "user-604ce78f",
+      "owner_user_id": "user-604ce78f",
+      "slug": "meepo",
+      "name": "meepo",
+      "project_avatar_url": "",
+      "one_line_pitch": "its meepo idk",
+      "screenshot_url": "/uploads/d3a1e3da-f35f-4d8d-8de7-8ac5ef6fb2ca.png",
+      "external_url": "https://meepo.online",
+      "tags": [
+        "Meepo"
+      ],
+      "source_type": "both",
+      "status": "Live",
+      "clicks_sent": 0,
+      "about": "",
+      "why_i_made_this": "world domination",
+      "featured": false,
+      "approved": true,
+      "created_at": "2026-04-13",
+      "updated_at": "2026-04-13T17:53:58.458Z"
+    },
+    {
+      "id": "f4822841-5f76-411c-93e1-f0f6630f1be3",
+      "creator_id": "user-604ce78f",
+      "owner_user_id": "user-604ce78f",
+      "slug": "meepo-dev",
+      "name": "meepo dev",
+      "project_avatar_url": "",
+      "one_line_pitch": "its meepo idk",
+      "screenshot_url": "/uploads/7a7e08fb-da6a-4b9f-bfe4-45e8f122423c.png",
+      "external_url": "https://meepo.online",
+      "tags": [],
+      "source_type": "both",
+      "status": "Live",
+      "clicks_sent": 0,
+      "about": "",
+      "why_i_made_this": "",
+      "featured": false,
+      "approved": false,
+      "created_at": "2026-04-13",
+      "rejected": true
     }
   ],
   "submissions": [
@@ -550,8 +594,34 @@
       "project_id": "ba6b110c-4775-429b-9d20-75a8602e7f8e",
       "contact_email": "keemin7@gmail.com",
       "submitted_at": "2026-04-12T21:38:02.329Z"
+    },
+    {
+      "project_id": "84c6d110-4976-44e4-ae1e-9199d2b7bee6",
+      "user_id": "user-604ce78f",
+      "submitted_at": "2026-04-13T17:23:16.816Z"
+    },
+    {
+      "project_id": "f4822841-5f76-411c-93e1-f0f6630f1be3",
+      "user_id": "user-604ce78f",
+      "submitted_at": "2026-04-13T17:45:06.858Z"
     }
   ],
-  "users": [],
-  "sessions": []
+  "users": [
+    {
+      "id": "user-604ce78f",
+      "github_id": 67605380,
+      "handle": "starstory-hq",
+      "display_name": "Keemin Lee",
+      "avatar_url": "https://avatars.githubusercontent.com/u/67605380?v=4",
+      "email": "keemin7@gmail.com",
+      "created_at": "2026-04-13T17:21:26.778Z"
+    }
+  ],
+  "sessions": [
+    {
+      "token": "fd4af7a8-7d4e-4ef0-acae-306656f4b20d",
+      "user_id": "user-604ce78f",
+      "created_at": "2026-04-13T18:49:33.565Z"
+    }
+  ]
 }
