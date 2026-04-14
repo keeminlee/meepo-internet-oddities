@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles, Target } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -46,7 +46,7 @@ export function DailyQuestCard() {
     >
       <div className="relative overflow-hidden aspect-[3/1] flex items-center justify-center bg-gradient-to-br from-emerald-500/10 to-transparent">
         <div className="text-center space-y-1">
-          <Sparkles className="h-8 w-8 text-emerald-500 mx-auto opacity-80" />
+          <Target className="h-8 w-8 text-emerald-500 mx-auto opacity-80" />
           <p className="text-xs font-medium uppercase tracking-widest text-emerald-500/70">
             Daily Quest
           </p>
