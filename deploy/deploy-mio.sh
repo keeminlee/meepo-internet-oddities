@@ -101,6 +101,11 @@ wait_for_http() {
   done
 
   log "FAILED: health-check (health check failed at $url)"
+  log "--- last curl attempt ---"
+  curl -sS --max-time 5 "$url" 2>&1 || true
+  log "--- recent $SERVICE journal ---"
+  sudo journalctl -u "$SERVICE" -n 40 --no-pager 2>&1 || true
+  log "--- end diagnostics ---"
   return 1
 }
 
@@ -138,6 +143,16 @@ preflight_stage() {
 clean_stage() {
   git clean -ffd
   rm -rf node_modules
+
+  # Remove stale lockfiles outside the project tree.  A leftover
+  # /home/meepo/package-lock.json causes Next.js to infer the wrong
+  # outputFileTracingRoot, which can break `next start` at runtime.
+  local parent_lock
+  parent_lock="$(cd "$APP_DIR/.." && pwd)/package-lock.json"
+  if [ -f "$parent_lock" ]; then
+    log "removing stale lockfile: $parent_lock"
+    rm -f "$parent_lock"
+  fi
 }
 
 deps_stage() {
