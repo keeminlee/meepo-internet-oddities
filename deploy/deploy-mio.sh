@@ -8,9 +8,9 @@ ENV_FILE="${ENV_FILE:-/etc/mio/mio-web.env}"
 MIN_FREE_KB="${MIN_FREE_KB:-512000}"
 HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:3001/api/health}"
 DATA_DIR="${DATA_DIR:-/var/lib/mio}"
-DATA_FILE="${DATA_FILE:-$DATA_DIR/db.json}"
+# DB_FILE matches the default MIO_DB_PATH in mio-web.env (read by the Next.js app).
+DB_FILE="${DB_FILE:-$DATA_DIR/mio.db}"
 UPLOADS_DIR="${UPLOADS_DIR:-$DATA_DIR/uploads}"
-BUNDLED_DB_FILE="${BUNDLED_DB_FILE:-$APP_DIR/server/db.seed.json}"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -121,7 +121,7 @@ preflight_stage() {
   log "disk: $disk_summary"
 
   [ -f "$APP_DIR/package-lock.json" ] || { log "ERROR: package-lock.json missing"; return 1; }
-  [ -d "$APP_DIR/server" ] || { log "ERROR: server/ missing"; return 1; }
+  [ -f "$APP_DIR/next.config.ts" ] || { log "ERROR: next.config.ts missing"; return 1; }
   [ -d "$APP_DIR/deploy" ] || { log "ERROR: deploy/ missing"; return 1; }
   [ -f "$ENV_FILE" ] || { log "ERROR: missing env file: $ENV_FILE"; return 1; }
 
@@ -148,16 +148,16 @@ build_stage() {
 
 runtime_data_stage() {
   sudo install -d -m 0775 -o meepo -g meepo "$DATA_DIR"
-
-  if [ ! -f "$DATA_FILE" ]; then
-    [ -f "$BUNDLED_DB_FILE" ] || { log "ERROR: missing bundled db file: $BUNDLED_DB_FILE"; return 1; }
-    sudo install -m 0664 -o meepo -g meepo "$BUNDLED_DB_FILE" "$DATA_FILE"
-  else
-    sudo chown meepo:meepo "$DATA_FILE"
-    sudo chmod 0664 "$DATA_FILE"
-  fi
-
   sudo install -d -m 0775 -o meepo -g meepo "$UPLOADS_DIR"
+
+  # Touch the DB file so the meepo user owns it before the app auto-bootstraps.
+  if [ ! -f "$DB_FILE" ]; then
+    sudo touch "$DB_FILE"
+  fi
+  sudo chown meepo:meepo "$DB_FILE"
+  sudo chmod 0664 "$DB_FILE"
+
+  # WAL mode creates -wal and -shm sidecar files; ensure directory is writable.
 }
 
 restart_stage() {

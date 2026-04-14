@@ -43,6 +43,7 @@ export interface ProjectRow {
   source_type: string;
   status: string;
   clicks_sent: number;
+  meep_count: number;
   about: string;
   why_i_made_this: string;
   featured: number; // 0/1
@@ -93,6 +94,7 @@ export interface Project {
   source_type: string;
   status: string;
   clicks_sent: number;
+  meep_count: number;
   about: string;
   why_i_made_this: string;
   featured: boolean;
@@ -143,6 +145,7 @@ export function mapProject(row: ProjectRow): Project {
     source_type: row.source_type,
     status: row.status,
     clicks_sent: row.clicks_sent,
+    meep_count: row.meep_count ?? 0,
     about: row.about,
     why_i_made_this: row.why_i_made_this,
     featured: !!row.featured,
