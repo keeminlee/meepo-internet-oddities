@@ -26,8 +26,16 @@ export type SubmissionError =
   | "slug_conflict";
 
 export type SubmissionResult =
-  | { ok: true; id: string; slug: string }
+  | { ok: true; id: string; slug: string; auto_approved: boolean }
   | { ok: false; error: SubmissionError; status: number };
+
+// Runtime switch: flip MIO_AUTO_APPROVE to "0" in /etc/mio/mio-web.env to
+// require manual review for every submission again. Default is auto-approve.
+function isAutoApproveEnabled(): boolean {
+  const raw = process.env.MIO_AUTO_APPROVE?.trim().toLowerCase();
+  if (raw === "0" || raw === "false" || raw === "off") return false;
+  return true;
+}
 
 export function createSubmission(
   userId: string,
@@ -68,14 +76,16 @@ export function createSubmission(
 
   const id = randomUUID();
   const created_at = new Date().toISOString().split("T")[0];
+  const autoApprove = isAutoApproveEnabled();
+  const approved = autoApprove ? 1 : 0;
   const tx = db.transaction(() => {
     db.prepare(
       `INSERT INTO projects (
         id, creator_id, owner_user_id, slug, name, project_avatar_url, one_line_pitch,
         screenshot_url, external_url, repo_url, built_with, tags, source_type, status, clicks_sent,
-        about, why_i_made_this, featured, approved, is_demo, rejected, rejection_reason,
+        about, why_i_made_this, featured, approved, reviewed, is_demo, rejected, rejection_reason,
         rejected_at, rejected_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, 0, 0, 0, '', '', '', ?, '')`,
+      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, ?, 0, 0, 0, '', '', '', ?, '')`,
     ).run(
       id,
       userId,
@@ -88,6 +98,7 @@ export function createSubmission(
       repo_url,
       JSON.stringify(tags),
       (input.why_i_made_this ?? "").trim().slice(0, 1000),
+      approved,
       created_at,
     );
     db.prepare(
@@ -96,13 +107,13 @@ export function createSubmission(
   });
   tx();
 
-  return { ok: true, id, slug };
+  return { ok: true, id, slug, auto_approved: autoApprove };
 }
 
 export function countPending(): number {
   const row = getDb()
     .prepare<[], { cnt: number }>(
-      "SELECT COUNT(*) AS cnt FROM projects WHERE approved = 0 AND rejected = 0",
+      "SELECT COUNT(*) AS cnt FROM projects WHERE reviewed = 0 AND rejected = 0",
     )
     .get();
   return row?.cnt ?? 0;
@@ -111,7 +122,7 @@ export function countPending(): number {
 export function listPending(): ProjectWithCreator[] {
   const rows = getDb()
     .prepare<[], ProjectRow>(
-      "SELECT * FROM projects WHERE approved = 0 AND rejected = 0 ORDER BY created_at DESC",
+      "SELECT * FROM projects WHERE reviewed = 0 AND rejected = 0 ORDER BY created_at DESC",
     )
     .all();
   return rows.map(mapProject).map((p) => {
@@ -122,7 +133,7 @@ export function listPending(): ProjectWithCreator[] {
 
 export function approve(slug: string): boolean {
   const result = getDb()
-    .prepare("UPDATE projects SET approved = 1 WHERE slug = ?")
+    .prepare("UPDATE projects SET approved = 1, reviewed = 1 WHERE slug = ?")
     .run(slug);
   return result.changes > 0;
 }
@@ -134,7 +145,8 @@ export function reject(
 ): boolean {
   const result = getDb()
     .prepare(
-      `UPDATE projects SET rejected = 1, rejection_reason = ?, rejected_at = ?, rejected_by = ?
+      `UPDATE projects SET approved = 0, rejected = 1, reviewed = 1,
+        rejection_reason = ?, rejected_at = ?, rejected_by = ?
        WHERE slug = ?`,
     )
     .run(

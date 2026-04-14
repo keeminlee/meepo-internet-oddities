@@ -23,7 +23,9 @@ export function SubmitForm() {
   const [uploadedFilename, setUploadedFilename] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState<
+    null | { slug: string; autoApproved: boolean }
+  >(null);
   const [isMeepoWriter, setIsMeepoWriter] = useState(false);
 
   useEffect(() => {
@@ -91,7 +93,14 @@ export function SubmitForm() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Submission failed");
       }
-      setSubmitted(true);
+      const body = (await res.json().catch(() => ({}))) as {
+        slug?: string;
+        auto_approved?: boolean;
+      };
+      setSubmitted({
+        slug: body.slug ?? "",
+        autoApproved: body.auto_approved === true,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
@@ -101,16 +110,38 @@ export function SubmitForm() {
   };
 
   if (submitted) {
+    const liveHref = submitted.slug ? `/project/${submitted.slug}` : "/";
     return (
       <div className="space-y-4 rounded-xl border border-border bg-card p-8 text-center">
         <div className="text-4xl">✦</div>
-        <h2 className="font-display text-2xl font-bold">Submitted for review</h2>
-        <p className="text-muted-foreground">
-          Your project has been added to the review queue. A writer will check it out soon.
-        </p>
-        <Button asChild variant="outline">
-          <a href="/">Back to browsing</a>
-        </Button>
+        {submitted.autoApproved ? (
+          <>
+            <h2 className="font-display text-2xl font-bold">Your meep is live</h2>
+            <p className="text-muted-foreground">
+              It&apos;s on Meepo now and collecting meeps. A writer may still
+              drop by for a quick read — we&apos;ll reach out only if
+              something needs changing.
+            </p>
+            <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+              <Button asChild>
+                <a href={liveHref}>View your meep</a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href="/">Back to browsing</a>
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="font-display text-2xl font-bold">Submitted for review</h2>
+            <p className="text-muted-foreground">
+              Your project has been added to the review queue. A writer will check it out soon.
+            </p>
+            <Button asChild variant="outline">
+              <a href="/">Back to browsing</a>
+            </Button>
+          </>
+        )}
       </div>
     );
   }

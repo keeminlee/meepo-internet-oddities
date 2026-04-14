@@ -41,7 +41,14 @@ export async function POST(req: NextRequest) {
     if (result.status === 403) return forbidden(errorMessage(result.error));
     return fail(errorMessage(result.error), result.status);
   }
-  return created({ id: result.id, slug: result.slug, message: "Submitted for review" });
+  return created({
+    id: result.id,
+    slug: result.slug,
+    auto_approved: result.auto_approved,
+    message: result.auto_approved
+      ? "Your project is live"
+      : "Submitted for review",
+  });
 }
 
 function errorMessage(code: string): string {

@@ -138,5 +138,10 @@ export const COLUMN_ADDITIONS: ColumnAddition[] = [
   { table: "users", column: "meep_balance", definition: "INTEGER NOT NULL DEFAULT 0" },
   { table: "users", column: "joined_at_cosmic", definition: "INTEGER NOT NULL DEFAULT 0" },
   { table: "projects", column: "meep_count", definition: "INTEGER NOT NULL DEFAULT 0" },
+  // Auto-approve flow: auto-approved projects go live immediately but still
+  // land in the admin queue until a writer explicitly reviews them. Legacy
+  // rows default to 0 (treated as unreviewed, which matches their historical
+  // manual-approval behavior).
+  { table: "projects", column: "reviewed", definition: "INTEGER NOT NULL DEFAULT 0" },
 ];
 
