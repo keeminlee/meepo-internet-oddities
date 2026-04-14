@@ -2,8 +2,9 @@
 
 import { Check, Lock } from "lucide-react";
 
-import { LovesPreviewDialog, isLovesLabel } from "@/components/LovesPreviewDialog";
+import { LovesPreviewDialog } from "@/components/LovesPreviewDialog";
 import type { Threshold } from "@/lib/domain/cosmic";
+import { isLovesLabel } from "@/lib/loves";
 
 interface Props {
   threshold: Threshold;

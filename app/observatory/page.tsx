@@ -1,11 +1,12 @@
 import Link from "next/link";
 
-import { LovesPreviewDialog, isLovesLabel } from "@/components/LovesPreviewDialog";
+import { LovesPreviewDialog } from "@/components/LovesPreviewDialog";
 import { MeepField } from "@/components/MeepField";
 import { MilestoneRow } from "@/components/MilestoneRow";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
 import { getCosmicState, listThresholds } from "@/lib/domain/cosmic";
+import { isLovesLabel } from "@/lib/loves";
 
 const MEEP_FIELD_CAP = 2000;
 
