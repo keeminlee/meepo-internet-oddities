@@ -43,5 +43,12 @@ _legacy/server/db.json
 next-env.d.ts
 tsconfig.tsbuildinfo
 
+# SQLite runtime database (use seed script for fresh installs)
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 # OMC runtime state (per-machine: plans, logs, sessions)
 .omc/
