@@ -1,11 +1,20 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { SubmitForm } from "@/components/SubmitForm";
+import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
+import { getUserFromSession } from "@/lib/domain/sessions";
 
 export const dynamic = "force-dynamic";
 
-export default function SubmitPage() {
+export default async function SubmitPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
+  const user = token ? getUserFromSession(token) : null;
+  if (!user) redirect("/api/auth/github");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
