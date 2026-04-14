@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:migrate": "tsx lib/db/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
+    "uploads:migrate": "tsx scripts/migrate-uploads.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
