@@ -11,14 +11,13 @@ import { OnboardingInfoButton } from "@/components/OnboardingInfoButton";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
-import { getFeatured, getMostLoved, getNewest } from "@/lib/domain/projects";
+import { getMostLoved, getNewest } from "@/lib/domain/projects";
 
 // Always fetch fresh from SQLite on each request. The homepage is never cached.
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   ensureBootstrapped();
-  const featured = getFeatured();
   const newest = getNewest(30);
   const mostLoved = getMostLoved(30);
 
@@ -77,7 +76,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <HomeBrowser featured={featured} newest={newest} mostLoved={mostLoved} />
+        <HomeBrowser newest={newest} mostLoved={mostLoved} />
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">

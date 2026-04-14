@@ -7,25 +7,23 @@ import type { ProjectWithCreator } from "@/lib/domain/types";
 import { ProjectCard } from "./ProjectCard";
 import { TagFilter } from "./TagFilter";
 
-type TabId = "featured" | "newest" | "most_loved";
+type TabId = "newest" | "most_loved";
 
 interface HomeBrowserProps {
-  featured: ProjectWithCreator[];
   newest: ProjectWithCreator[];
   mostLoved: ProjectWithCreator[];
 }
 
 const TABS: { id: TabId; label: string; subtitle: string }[] = [
-  { id: "featured", label: "Featured", subtitle: "Curated for voice, taste, and singularity" },
   { id: "newest", label: "Newest", subtitle: "New artifacts from strange minds" },
   { id: "most_loved", label: "Most loved", subtitle: "Highest meep count first" },
 ];
 
-export function HomeBrowser({ featured, newest, mostLoved }: HomeBrowserProps) {
-  const [tab, setTab] = useState<TabId>("featured");
+export function HomeBrowser({ newest, mostLoved }: HomeBrowserProps) {
+  const [tab, setTab] = useState<TabId>("newest");
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const source = tab === "featured" ? featured : tab === "newest" ? newest : mostLoved;
+  const source = tab === "newest" ? newest : mostLoved;
   const filtered = useMemo(
     () => (activeTag ? source.filter((p) => p.tags.includes(activeTag)) : source),
     [activeTag, source],
