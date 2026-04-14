@@ -16,6 +16,9 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   needsHandle: boolean;
   isMeepoWriter: boolean;
+  isActuallyMeepoWriter: boolean;
+  viewAsUser: boolean;
+  setViewAsUser: (v: boolean) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -26,14 +29,27 @@ const AuthContext = createContext<AuthContextValue>({
   isAuthenticated: false,
   needsHandle: false,
   isMeepoWriter: false,
+  isActuallyMeepoWriter: false,
+  viewAsUser: false,
+  setViewAsUser: () => {},
   logout: async () => {},
   refreshUser: async () => {},
 });
 
+const VIEW_AS_USER_KEY = "mio:viewAsUser";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMeepoWriter, setIsMeepoWriter] = useState(false);
+  const [isActuallyMeepoWriter, setIsActuallyMeepoWriter] = useState(false);
+  const [viewAsUser, setViewAsUserState] = useState<boolean>(() => {
+    try { return localStorage.getItem(VIEW_AS_USER_KEY) === "1"; } catch { return false; }
+  });
+
+  const setViewAsUser = useCallback((v: boolean) => {
+    setViewAsUserState(v);
+    try { localStorage.setItem(VIEW_AS_USER_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  }, []);
 
   const fetchMe = useCallback(async () => {
     try {
@@ -41,14 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (data.authenticated && data.user) {
         setUser(data.user);
-        setIsMeepoWriter(!!data.is_meepo_writer);
+        setIsActuallyMeepoWriter(!!data.is_meepo_writer);
       } else {
         setUser(null);
-        setIsMeepoWriter(false);
+        setIsActuallyMeepoWriter(false);
       }
     } catch {
       setUser(null);
-      setIsMeepoWriter(false);
+      setIsActuallyMeepoWriter(false);
     } finally {
       setLoading(false);
     }
@@ -70,7 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAuthenticated: !!user,
         needsHandle: !!user && !user.handle,
-        isMeepoWriter,
+        isMeepoWriter: isActuallyMeepoWriter && !viewAsUser,
+        isActuallyMeepoWriter,
+        viewAsUser,
+        setViewAsUser,
         logout,
         refreshUser: fetchMe,
       }}

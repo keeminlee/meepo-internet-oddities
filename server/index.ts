@@ -590,7 +590,21 @@ const server = createServer(async (req, res) => {
     const creatorMatch = path.match(/^\/api\/creators\/([a-z0-9-]+)$/);
     if (method === "GET" && creatorMatch) {
       const handle = creatorMatch[1];
-      const creator = db.creators.find((c: any) => c.handle === handle);
+      let creator: any = db.creators.find((c: any) => c.handle === handle);
+      if (!creator) {
+        const user = db.users.find((u) => u.handle === handle);
+        if (user) {
+          creator = {
+            id: user.id,
+            handle: user.handle || "",
+            display_name: user.display_name,
+            avatar_url: user.avatar_url || "",
+            bio: "",
+            creative_thesis: "",
+            links: {},
+          };
+        }
+      }
       if (!creator) return notFound(res);
       const projects = db.projects
         .filter((p: any) => p.creator_id === creator.id && p.approved)

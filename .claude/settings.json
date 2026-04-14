@@ -1,0 +1,8 @@
+{
+  "env": {
+    "OMC_SKIP_HOOKS": "Stop"
+  },
+  "hooks": {
+    "Stop": []
+  }
+}

@@ -24,7 +24,10 @@ export function AuthButton() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link to="/my-meeps" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+      <Link
+        to={user?.handle ? `/u/${user.handle}` : "/my-meeps"}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      >
         {user?.avatar_url && (
           <img
             src={user.avatar_url}

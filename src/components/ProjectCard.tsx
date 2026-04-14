@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MousePointerClick } from "lucide-react";
 import type { ProjectWithCreator } from "@/types";
 import { StatusBadge } from "./StatusBadge";
@@ -12,6 +12,7 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
   const [screenshotError, setScreenshotError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <Link
@@ -40,7 +41,17 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
       {/* Content */}
       <div className="space-y-3 p-4">
         {/* Maker-first identity */}
-        <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center gap-2 ${project.creator?.handle ? "cursor-pointer" : ""}`}
+          onClick={(e) => {
+            if (project.creator?.handle) {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(`/u/${project.creator.handle}`);
+            }
+          }}
+          role={project.creator?.handle ? "link" : undefined}
+        >
           {project.creator?.avatar_url && !avatarError ? (
             <img src={project.creator.avatar_url} alt={creatorName} className="h-7 w-7 rounded-full" onError={() => setAvatarError(true)} />
           ) : (
@@ -50,7 +61,7 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
           )}
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">By</p>
-            <p className="truncate text-sm font-semibold leading-tight">
+            <p className="truncate text-sm font-semibold leading-tight hover:text-primary transition-colors">
               {creatorName}{" "}
               {creatorHandle && (
                 <span className="text-xs font-normal text-muted-foreground">{creatorHandle}</span>

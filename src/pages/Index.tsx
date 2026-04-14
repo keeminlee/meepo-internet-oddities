@@ -9,7 +9,7 @@ import { AuthButton } from "@/components/AuthButton";
 import { useAuth } from "@/hooks/use-auth";
 import { useFeaturedProjects, useNewestProjects, useProjects } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowDown, ClipboardList } from "lucide-react";
+import { Sparkles, ArrowDown, ClipboardList, Eye, EyeOff } from "lucide-react";
 
 function ProjectGrid({ items, title, subtitle }: { items: any[]; title: string; subtitle?: string }) {
   if (items.length === 0) return null;
@@ -31,7 +31,7 @@ function ProjectGrid({ items, title, subtitle }: { items: any[]; title: string; 
 export default function Index() {
   const [activeTag, setActiveTag] = useState<ProjectTag | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
-  const { isAuthenticated, isMeepoWriter } = useAuth();
+  const { isMeepoWriter, isActuallyMeepoWriter, viewAsUser, setViewAsUser } = useAuth();
 
   const { data: featured = [], isLoading: loadingFeatured } = useFeaturedProjects();
   const { data: newest = [], isLoading: loadingNewest } = useNewestProjects(6);
@@ -46,6 +46,17 @@ export default function Index() {
             {BRAND.name} <span className="text-primary">·</span>
           </span>
           <div className="flex items-center gap-3">
+            {isActuallyMeepoWriter && (
+              <Button
+                size="sm"
+                variant={viewAsUser ? "default" : "ghost"}
+                onClick={() => setViewAsUser(!viewAsUser)}
+                title={viewAsUser ? "Currently viewing as regular user — click to restore writer view" : "Preview the site as a regular user"}
+              >
+                {viewAsUser ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {viewAsUser ? "Viewing as user" : "View as user"}
+              </Button>
+            )}
             {isMeepoWriter && (
               <Link
                 to="/review"
