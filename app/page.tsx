@@ -2,6 +2,7 @@ import { ArrowDown, ClipboardList, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { AuthButton } from "@/components/AuthButton";
+import { CosmicCounter } from "@/components/CosmicCounter";
 import { HomeBrowser } from "@/components/HomeBrowser";
 import { OnboardingBubbles } from "@/components/OnboardingBubbles";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default async function HomePage() {
             {BRAND.name} <span className="text-primary">·</span>
           </Link>
           <div className="flex items-center gap-3">
+            <CosmicCounter />
             <Link
               href="/admin"
               className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
