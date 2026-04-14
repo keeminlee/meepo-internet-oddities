@@ -79,6 +79,44 @@ export const SCHEMA_DDL: string[] = [
   `CREATE INDEX IF NOT EXISTS idx_projects_approved ON projects(approved)`,
   `CREATE INDEX IF NOT EXISTS idx_projects_featured ON projects(featured)`,
   `CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`,
+
+  // ─── Meep economy (V0) ─────────────────────────────────────────
+  // Counted-click ledger. One row per (user, project, calendar day) via the
+  // UNIQUE constraint — enforces the "duplicate click same project same day
+  // does not count" rule at the SQL level.
+  `CREATE TABLE IF NOT EXISTS clicks (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    clicked_at TEXT NOT NULL,
+    UNIQUE(user_id, project_id, clicked_at)
+  )`,
+
+  // Singleton row keyed on id=1. Tracks lifetime cosmic meeps (never decreases
+  // — invariant enforced in domain code, not SQL) and the current milestone label.
+  `CREATE TABLE IF NOT EXISTS cosmic_state (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    total_meeps INTEGER NOT NULL DEFAULT 0,
+    current_threshold TEXT NOT NULL DEFAULT ''
+  )`,
+
+  // Cosmic milestones. Writers/admins manage these via /admin.
+  `CREATE TABLE IF NOT EXISTS thresholds (
+    id TEXT PRIMARY KEY,
+    meep_target INTEGER NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    feature_key TEXT NOT NULL DEFAULT '',
+    unlocked INTEGER NOT NULL DEFAULT 0,
+    unlocked_at TEXT NOT NULL DEFAULT ''
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_clicks_user_day ON clicks(user_id, clicked_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_clicks_project ON clicks(project_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_thresholds_target ON thresholds(meep_target)`,
+
+  // Seed the singleton cosmic_state row. Idempotent via INSERT OR IGNORE on
+  // the primary key — safe to run on every migrate.
+  `INSERT OR IGNORE INTO cosmic_state (id, total_meeps, current_threshold) VALUES (1, 0, '')`,
 ];
 
 // Column additions applied after SCHEMA_DDL. Each entry adds a column to an
@@ -94,5 +132,11 @@ export interface ColumnAddition {
 
 export const COLUMN_ADDITIONS: ColumnAddition[] = [
   { table: "projects", column: "repo_url", definition: "TEXT NOT NULL DEFAULT ''" },
+  // Meep economy (V0). Pre-economy cohort defaults to 0 — correctly models
+  // existing users as "joined at cosmic zero" and existing projects as having
+  // no minted meeps yet.
+  { table: "users", column: "meep_balance", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "users", column: "joined_at_cosmic", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "projects", column: "meep_count", definition: "INTEGER NOT NULL DEFAULT 0" },
 ];
 

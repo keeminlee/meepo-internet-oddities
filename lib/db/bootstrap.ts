@@ -23,6 +23,10 @@ export function ensureBootstrapped(): void {
       runSeed({ source: seedPath, db });
     }
   }
+  // Ensure the singleton cosmic_state row exists. Safe on re-run.
+  db.prepare(
+    "INSERT OR IGNORE INTO cosmic_state (id, total_meeps, current_threshold) VALUES (1, 0, '')",
+  ).run();
   bootstrapped = true;
 }
 

@@ -1,7 +1,9 @@
+import { ArrowDown, ClipboardList, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { AuthButton } from "@/components/AuthButton";
 import { HomeBrowser } from "@/components/HomeBrowser";
+import { OnboardingBubbles } from "@/components/OnboardingBubbles";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
@@ -26,13 +28,17 @@ export default async function HomePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
+              <ClipboardList className="h-4 w-4" />
               Review
             </Link>
             <AuthButton />
             <Link href="/submit">
-              <Button size="sm">Post your meep</Button>
+              <Button size="sm">
+                <Sparkles className="h-4 w-4" />
+                Post your meep
+              </Button>
             </Link>
           </div>
         </div>
@@ -45,10 +51,14 @@ export default async function HomePage() {
           <p className="mx-auto max-w-xl text-muted-foreground">{BRAND.description}</p>
           <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link href="/submit">
-              <Button size="lg">Post your meep</Button>
+              <Button size="lg">
+                <Sparkles className="h-4 w-4" />
+                Post your meep
+              </Button>
             </Link>
             <Link href="#discover">
               <Button size="lg" variant="outline">
+                <ArrowDown className="h-4 w-4" />
                 Explore the observatory
               </Button>
             </Link>
@@ -64,6 +74,8 @@ export default async function HomePage() {
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
         <p>{BRAND.footerLine}</p>
       </footer>
+
+      <OnboardingBubbles />
     </div>
   );
 }
