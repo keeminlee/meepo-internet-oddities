@@ -5,6 +5,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { seedV0Thresholds } from "../domain/thresholds";
+
 import { getDb, resolveDbPath, runMigrations } from "./index";
 import { runSeed } from "./seed";
 
@@ -27,6 +29,8 @@ export function ensureBootstrapped(): void {
   db.prepare(
     "INSERT OR IGNORE INTO cosmic_state (id, total_meeps, current_threshold) VALUES (1, 0, '')",
   ).run();
+  // Seed the V0 "Loves unlock at 100 cosmic meeps" threshold (spec §6).
+  seedV0Thresholds();
   bootstrapped = true;
 }
 

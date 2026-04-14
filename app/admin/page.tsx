@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AdminQueue } from "@/components/AdminQueue";
+import { ThresholdManager } from "@/components/ThresholdManager";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
@@ -50,6 +51,10 @@ export default async function AdminPage() {
           <p className="text-muted-foreground">{pending.length} awaiting review</p>
         </div>
         <AdminQueue initial={pending} />
+
+        <div className="border-t border-border pt-8">
+          <ThresholdManager />
+        </div>
       </main>
     </div>
   );
