@@ -11,6 +11,9 @@ DATA_DIR="${DATA_DIR:-/var/lib/mio}"
 # DB_FILE matches the default MIO_DB_PATH in mio-web.env (read by the Next.js app).
 DB_FILE="${DB_FILE:-$DATA_DIR/mio.db}"
 UPLOADS_DIR="${UPLOADS_DIR:-$DATA_DIR/uploads}"
+CERTBOT_WEBROOT="${CERTBOT_WEBROOT:-/var/www/certbot}"
+NGINX_SITE="${NGINX_SITE:-mio-web}"
+CERT_DOMAIN="${CERT_DOMAIN:-meepo.online}"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -160,6 +163,50 @@ runtime_data_stage() {
   # WAL mode creates -wal and -shm sidecar files; ensure directory is writable.
 }
 
+certbot_stage() {
+  if ! command -v certbot >/dev/null 2>&1; then
+    log "WARNING: certbot not installed; skipping certificate renewal"
+    return 0
+  fi
+
+  if [ ! -d "/etc/letsencrypt/live/$CERT_DOMAIN" ]; then
+    log "WARNING: no TLS certificates found for $CERT_DOMAIN"
+    log "WARNING: run initial setup: sudo certbot certonly --webroot -w $CERTBOT_WEBROOT -d $CERT_DOMAIN -d www.$CERT_DOMAIN"
+    return 0
+  fi
+
+  sudo certbot renew --non-interactive 2>&1 || {
+    log "WARNING: certbot renew exited non-zero (cert may not be due for renewal)"
+  }
+
+  return 0
+}
+
+nginx_stage() {
+  if ! command -v nginx >/dev/null 2>&1; then
+    log "WARNING: nginx not installed; skipping reverse-proxy config"
+    return 0
+  fi
+
+  local src="$APP_DIR/deploy/mio-web.nginx.conf"
+  local dest="/etc/nginx/sites-available/$NGINX_SITE"
+
+  sudo install -d -m 0755 "$CERTBOT_WEBROOT"
+  sudo cp "$src" "$dest"
+
+  if [ ! -L "/etc/nginx/sites-enabled/$NGINX_SITE" ]; then
+    sudo ln -sf "$dest" "/etc/nginx/sites-enabled/$NGINX_SITE"
+  fi
+
+  if sudo nginx -t 2>&1; then
+    sudo systemctl reload nginx
+  else
+    log "WARNING: nginx config test failed; skipping reload (check TLS certs for $CERT_DOMAIN)"
+  fi
+
+  return 0
+}
+
 restart_stage() {
   cd "$APP_DIR"
   sudo systemctl daemon-reload
@@ -168,7 +215,7 @@ restart_stage() {
 
 health_check_stage() {
   wait_for_active "$SERVICE"
-  wait_for_http "$HEALTHCHECK_URL"
+  wait_for_http "$HEALTHCHECK_URL" 60
 }
 
 log "prepared deploy context for origin/$BRANCH"
@@ -180,6 +227,8 @@ run_stage clean clean_stage
 run_stage deps deps_stage
 run_stage build build_stage
 run_stage runtime-data runtime_data_stage
+run_stage certbot certbot_stage
+run_stage nginx nginx_stage
 run_stage restart restart_stage
 run_stage health-check health_check_stage
 
