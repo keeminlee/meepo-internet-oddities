@@ -1,10 +1,12 @@
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { MeepField } from "@/components/MeepField";
 import { MilestoneRow } from "@/components/MilestoneRow";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
 import { getCosmicState, listThresholds } from "@/lib/domain/cosmic";
+
+const MEEP_FIELD_CAP = 2000;
 
 export const dynamic = "force-dynamic";
 
@@ -27,13 +29,21 @@ export default function ObservatoryPage() {
       <main className="container mx-auto max-w-2xl px-4 py-12 space-y-12">
         {/* Total meeps */}
         <section className="text-center space-y-4">
-          <Sparkles className="h-10 w-10 text-primary mx-auto" />
+          <MeepField
+            count={cosmic.total_meeps}
+            className="w-full h-56 md:h-64"
+          />
           <h1 className="font-display text-4xl font-bold md:text-5xl">
             {cosmic.total_meeps.toLocaleString()}
           </h1>
           <p className="text-lg text-muted-foreground">
             meeps in the universe — the energy flowing through {BRAND.name}
           </p>
+          {cosmic.total_meeps > MEEP_FIELD_CAP && (
+            <p className="text-xs text-muted-foreground">
+              visualizing {MEEP_FIELD_CAP.toLocaleString()} of {cosmic.total_meeps.toLocaleString()}
+            </p>
+          )}
         </section>
 
         {/* Progress to next milestone */}
