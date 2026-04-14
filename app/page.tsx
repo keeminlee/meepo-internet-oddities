@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AuthButton } from "@/components/AuthButton";
 import { CosmicCounter } from "@/components/CosmicCounter";
 import { DailyQuestCard } from "@/components/DailyQuestCard";
+import { FirstMeepCoach } from "@/components/FirstMeepCoach";
 import { HomeBrowser } from "@/components/HomeBrowser";
 import { MeepoCard } from "@/components/MeepoCard";
 import { OnboardingBubbles } from "@/components/OnboardingBubbles";
@@ -84,6 +85,7 @@ export default async function HomePage() {
       </footer>
 
       <OnboardingBubbles />
+      <FirstMeepCoach />
     </div>
   );
 }
