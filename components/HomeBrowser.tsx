@@ -68,7 +68,7 @@ export function HomeBrowser({ newest, mostLoved }: HomeBrowserProps) {
         title={activeTag ? `${activeMeta.label} · tagged "${activeTag}"` : activeMeta.label}
         subtitle={
           activeTag
-            ? `${filtered.length} meep${filtered.length !== 1 ? "s" : ""} in ${activeMeta.label.toLowerCase()}`
+            ? `${filtered.length} project${filtered.length !== 1 ? "s" : ""} in ${activeMeta.label.toLowerCase()}`
             : activeMeta.subtitle
         }
       />
@@ -93,7 +93,7 @@ function ProjectGrid({
       </div>
       {items.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-card/60 p-8 text-center text-sm text-muted-foreground">
-          No meeps here yet.
+          No projects here yet.
         </p>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

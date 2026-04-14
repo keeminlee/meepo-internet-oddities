@@ -86,7 +86,7 @@ export function SubmitForm() {
         }),
       });
       if (res.status === 401) {
-        setError("You need to sign in before submitting a meep.");
+        setError("You need to sign in before submitting a project.");
         return;
       }
       if (!res.ok) {
@@ -116,7 +116,7 @@ export function SubmitForm() {
         <div className="text-4xl">✦</div>
         {submitted.autoApproved ? (
           <>
-            <h2 className="font-display text-2xl font-bold">Your meep is live</h2>
+            <h2 className="font-display text-2xl font-bold">Your project is live</h2>
             <p className="text-muted-foreground">
               It&apos;s on Meepo now and collecting meeps. A writer may still
               drop by for a quick read — we&apos;ll reach out only if
@@ -124,7 +124,7 @@ export function SubmitForm() {
             </p>
             <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
               <Button asChild>
-                <a href={liveHref}>View your meep</a>
+                <a href={liveHref}>View your project</a>
               </Button>
               <Button asChild variant="outline">
                 <a href="/">Back to browsing</a>
@@ -182,7 +182,7 @@ export function SubmitForm() {
           id="repo-url"
           type="url"
           value={repoUrl}
-          placeholder="https://github.com/you/your-meep"
+          placeholder="https://github.com/you/your-project"
           onChange={(e) => setRepoUrl(e.target.value)}
         />
         <p className="text-xs text-muted-foreground">GitHub, GitLab, Codeberg, or any source host.</p>

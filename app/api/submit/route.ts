@@ -66,7 +66,7 @@ function errorMessage(code: string): string {
     case "meepo_tag_forbidden":
       return "You are not authorized to use the Meepo tag";
     case "slug_conflict":
-      return "A meep with a similar name already exists";
+      return "A project with a similar name already exists";
     default:
       return code;
   }
