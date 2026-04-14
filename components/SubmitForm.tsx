@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,24 @@ export function SubmitForm() {
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [isMeepoWriter, setIsMeepoWriter] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { is_meepo_writer?: boolean } | null) => {
+        if (!cancelled && data?.is_meepo_writer) setIsMeepoWriter(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const availableTags = isMeepoWriter
+    ? TAG_OPTIONS
+    : TAG_OPTIONS.filter((t) => t !== "Meepo");
 
   const toggleTag = (t: string) => {
     setTags((prev) => {
@@ -159,7 +177,7 @@ export function SubmitForm() {
       <div className="space-y-1.5">
         <Label>Tags (up to {MAX_TAGS})</Label>
         <div className="flex flex-wrap gap-2">
-          {TAG_OPTIONS.filter((t) => t !== "Meepo").map((t) => (
+          {availableTags.map((t) => (
             <TagBadge
               key={t}
               tag={t}
