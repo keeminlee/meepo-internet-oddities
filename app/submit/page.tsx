@@ -18,7 +18,7 @@ export default function SubmitPage() {
 
       <main className="container mx-auto max-w-2xl px-4 py-12 space-y-6">
         <div className="space-y-2">
-          <h1 className="font-display text-3xl font-bold">Post your meep</h1>
+          <h1 className="font-display text-3xl font-bold">Submit a project</h1>
           <p className="text-muted-foreground">
             Share something strange, useful, or personal. Your submission enters the review queue.
           </p>

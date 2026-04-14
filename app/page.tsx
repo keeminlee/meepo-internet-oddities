@@ -1,14 +1,17 @@
-import { ArrowDown, ClipboardList, Sparkles } from "lucide-react";
+import { ArrowDown, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import { AuthButton } from "@/components/AuthButton";
 import { CosmicCounter } from "@/components/CosmicCounter";
+import { DailyQuestCard } from "@/components/DailyQuestCard";
 import { HomeBrowser } from "@/components/HomeBrowser";
+import { MeepoCard } from "@/components/MeepoCard";
 import { OnboardingBubbles } from "@/components/OnboardingBubbles";
+import { OnboardingInfoButton } from "@/components/OnboardingInfoButton";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
-import { getFeatured, getNewest, listProjects } from "@/lib/domain/projects";
+import { getFeatured, getMostLoved, getNewest } from "@/lib/domain/projects";
 
 // Always fetch fresh from SQLite on each request. The homepage is never cached.
 export const dynamic = "force-dynamic";
@@ -16,8 +19,8 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   ensureBootstrapped();
   const featured = getFeatured();
-  const newest = getNewest(6);
-  const all = listProjects();
+  const newest = getNewest(30);
+  const mostLoved = getMostLoved(30);
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,18 +31,12 @@ export default async function HomePage() {
           </Link>
           <div className="flex items-center gap-3">
             <CosmicCounter />
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Review
-            </Link>
             <AuthButton />
+            <OnboardingInfoButton />
             <Link href="/submit">
               <Button size="sm">
                 <Sparkles className="h-4 w-4" />
-                Post your meep
+                Submit a project
               </Button>
             </Link>
           </div>
@@ -55,7 +52,7 @@ export default async function HomePage() {
             <Link href="/submit">
               <Button size="lg">
                 <Sparkles className="h-4 w-4" />
-                Post your meep
+                Submit a project
               </Button>
             </Link>
             <Link href="#discover">
@@ -70,7 +67,17 @@ export default async function HomePage() {
       </section>
 
       <main id="discover" className="container mx-auto space-y-16 px-4 pb-20">
-        <HomeBrowser featured={featured} newest={newest} all={all} />
+        {/* Pinned cards — observatory + daily quest side by side */}
+        <div className="mx-auto flex max-w-2xl flex-col gap-4 sm:flex-row">
+          <div className="flex-1">
+            <MeepoCard />
+          </div>
+          <div className="flex-1">
+            <DailyQuestCard />
+          </div>
+        </div>
+
+        <HomeBrowser featured={featured} newest={newest} mostLoved={mostLoved} />
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">

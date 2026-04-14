@@ -99,6 +99,15 @@ export function createSubmission(
   return { ok: true, id, slug };
 }
 
+export function countPending(): number {
+  const row = getDb()
+    .prepare<[], { cnt: number }>(
+      "SELECT COUNT(*) AS cnt FROM projects WHERE approved = 0 AND rejected = 0",
+    )
+    .get();
+  return row?.cnt ?? 0;
+}
+
 export function listPending(): ProjectWithCreator[] {
   const rows = getDb()
     .prepare<[], ProjectRow>(

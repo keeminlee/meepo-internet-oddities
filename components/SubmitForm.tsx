@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ import { TagBadge } from "./TagBadge";
 const MAX_TAGS = 5;
 
 export function SubmitForm() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [pitch, setPitch] = useState("");
   const [url, setUrl] = useState("");
@@ -25,6 +23,7 @@ export function SubmitForm() {
   const [uploadedFilename, setUploadedFilename] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const toggleTag = (t: string) => {
     setTags((prev) => {
@@ -74,8 +73,7 @@ export function SubmitForm() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error || "Submission failed");
       }
-      const { slug } = (await res.json()) as { slug: string };
-      router.push(`/project/${slug}`);
+      setSubmitted(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
       setError(msg);
@@ -83,6 +81,21 @@ export function SubmitForm() {
       setBusy(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="space-y-4 rounded-xl border border-border bg-card p-8 text-center">
+        <div className="text-4xl">✦</div>
+        <h2 className="font-display text-2xl font-bold">Submitted for review</h2>
+        <p className="text-muted-foreground">
+          Your project has been added to the review queue. A writer will check it out soon.
+        </p>
+        <Button asChild variant="outline">
+          <a href="/">Back to browsing</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">

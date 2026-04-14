@@ -69,7 +69,7 @@ export function VisitButton({ slug, externalUrl }: VisitButtonProps) {
   return (
     <div className="space-y-2">
       <Button size="lg" onClick={onVisit}>
-        <ExternalLink className="h-4 w-4" /> Visit meep
+        <ExternalLink className="h-4 w-4" /> Visit project
       </Button>
       <FeedbackPill feedback={feedback} />
     </div>

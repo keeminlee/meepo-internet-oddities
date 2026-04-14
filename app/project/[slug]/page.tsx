@@ -1,13 +1,17 @@
-import { ArrowLeft, Github, MousePointerClick } from "lucide-react";
+import { ArrowLeft, Github, MousePointerClick, AlertTriangle } from "lucide-react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ProjectEditor } from "@/components/ProjectEditor";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TagBadge } from "@/components/TagBadge";
 import { VisitButton } from "@/components/VisitButton";
+import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
-import { getProjectBySlug } from "@/lib/domain/projects";
+import { getProjectBySlug, getProjectBySlugIncludingUnapproved } from "@/lib/domain/projects";
+import { getUserFromSession } from "@/lib/domain/sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +22,25 @@ interface Props {
 export default async function ProjectDetailPage({ params }: Props) {
   ensureBootstrapped();
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+
+  // Try approved first, then fall back to unapproved for the owner
+  let project = getProjectBySlug(slug);
+  let isOwnerViewingRejected = false;
+
+  if (!project) {
+    // Check if the current user owns this (possibly rejected/pending) project
+    const cookieStore = await cookies();
+    const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
+    const viewer = token ? getUserFromSession(token) : null;
+    if (viewer) {
+      const full = getProjectBySlugIncludingUnapproved(slug);
+      if (full && full.owner_user_id === viewer.id) {
+        project = full;
+        isOwnerViewingRejected = full.rejected;
+      }
+    }
+  }
+
   if (!project) notFound();
 
   const creatorName = project.creator?.display_name ?? "Unknown";
@@ -41,6 +63,35 @@ export default async function ProjectDetailPage({ params }: Props) {
         >
           <ArrowLeft className="h-4 w-4" /> Back to browse
         </Link>
+
+        {isOwnerViewingRejected && (
+          <div className="rounded-xl border-2 border-amber-500/40 bg-amber-500/5 p-5 space-y-2">
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-5 w-5" />
+              <h3 className="font-display font-bold text-lg">Needs changes</h3>
+            </div>
+            {project.rejection_reason ? (
+              <p className="text-sm text-muted-foreground">
+                <strong>Reviewer feedback:</strong> {project.rejection_reason}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This project was sent back for changes. Edit your project below and save to resubmit for review.
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Saving your edits will automatically resubmit this project to the review queue.
+            </p>
+          </div>
+        )}
+
+        {!project.approved && !project.rejected && (
+          <div className="rounded-xl border border-border bg-muted/50 p-4">
+            <p className="text-sm text-muted-foreground">
+              ⏳ This project is pending review. It will appear publicly once approved.
+            </p>
+          </div>
+        )}
 
         {project.screenshot_url && (
           <div className="overflow-hidden rounded-xl border border-border">
@@ -111,6 +162,19 @@ export default async function ProjectDetailPage({ params }: Props) {
               </a>
             )}
           </div>
+
+          <ProjectEditor
+            project={{
+              slug: project.slug,
+              owner_user_id: project.owner_user_id,
+              name: project.name,
+              one_line_pitch: project.one_line_pitch,
+              external_url: project.external_url,
+              repo_url: project.repo_url,
+              why_i_made_this: project.why_i_made_this,
+              tags: project.tags,
+            }}
+          />
         </div>
 
         <div className="space-y-8 border-t border-border pt-8">

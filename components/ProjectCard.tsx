@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointerClick } from "lucide-react";
+import { MousePointerClick, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -88,10 +88,19 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
           ))}
         </div>
 
-        <div className="flex items-center gap-1 border-t border-border pt-1 text-xs text-muted-foreground">
-          <MousePointerClick className="h-3.5 w-3.5" />
-          <span className="font-medium">{(project.clicks_sent || 0).toLocaleString()}</span>
-          <span>clicks sent</span>
+        <div className="flex items-center gap-3 border-t border-border pt-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="font-medium text-foreground tabular-nums">
+              {(project.meep_count || 0).toLocaleString()}
+            </span>
+            <span>meeps</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <MousePointerClick className="h-3.5 w-3.5" />
+            <span className="tabular-nums">{(project.clicks_sent || 0).toLocaleString()}</span>
+            <span>clicks</span>
+          </span>
         </div>
       </div>
     </Link>

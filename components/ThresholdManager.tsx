@@ -115,15 +115,15 @@ export function ThresholdManager() {
       <div>
         <h2 className="font-display text-2xl font-bold">Thresholds</h2>
         <p className="text-sm text-muted-foreground">
-          Cosmic milestone gates. Feature flags unlock when the total meep count crosses a threshold.
+          Milestone gates. Feature flags unlock when the total meep count crosses a threshold.
         </p>
       </div>
 
       {cosmic && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">Cosmic state</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Global state</p>
           <p className="mt-1 text-2xl font-bold tabular-nums">
-            {cosmic.total_meeps.toLocaleString()} cosmic meeps
+            {cosmic.total_meeps.toLocaleString()} meeps in the universe
           </p>
           {cosmic.next_threshold ? (
             <div className="mt-3 space-y-1">

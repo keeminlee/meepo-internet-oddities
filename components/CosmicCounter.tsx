@@ -52,13 +52,13 @@ export function CosmicCounter() {
       className="group hidden items-center gap-2 rounded-full border border-border bg-secondary/60 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted sm:inline-flex"
       title={
         has
-          ? `Next milestone: ${data.next_threshold!.label} at ${data.next_threshold!.meep_target} cosmic meeps`
-          : "Cosmic meeps — all milestones reached"
+          ? `Next milestone: ${data.next_threshold!.label} at ${data.next_threshold!.meep_target} meeps in the universe`
+          : "Meeps in the universe — all milestones reached"
       }
     >
       <Sparkles className="h-3.5 w-3.5 text-primary" />
       <span className="tabular-nums text-foreground">{data.total_meeps.toLocaleString()}</span>
-      <span>cosmic meeps</span>
+      <span>meeps in the universe</span>
       {has && data.next_threshold && (
         <span className="ml-1 hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted md:inline-block">
           <span

@@ -40,6 +40,18 @@ export function getFeatured(): ProjectWithCreator[] {
   return rows.map(mapProject).map(resolveCreator);
 }
 
+export function getMostLoved(count = 30): ProjectWithCreator[] {
+  const rows = getDb()
+    .prepare<[number], ProjectRow>(
+      `SELECT * FROM projects
+       WHERE approved = 1 AND is_demo = 0
+       ORDER BY meep_count DESC, created_at DESC
+       LIMIT ?`,
+    )
+    .all(count);
+  return rows.map(mapProject).map(resolveCreator);
+}
+
 export function getNewest(count = 6): ProjectWithCreator[] {
   const rows = getDb()
     .prepare<[number], ProjectRow>(

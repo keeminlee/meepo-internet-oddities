@@ -1,11 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-const STORAGE_KEY = "meepo_onboarding_complete";
+export const ONBOARDING_STORAGE_KEY = "meepo_onboarding_complete";
+export const ONBOARDING_REPLAY_EVENT = "meepo:onboarding-replay";
+export const ONBOARDING_DISMISS_EVENT = "meepo:onboarding-dismiss";
 
 interface Bubble {
   title: string;
@@ -17,41 +19,32 @@ const BUBBLES: Bubble[] = [
   {
     title: "Welcome",
     lines: [
-      "Welcome to Meepo — software as a society.",
-      "This is a curated observatory of strange, beautiful, and promising software projects.",
+      "Welcome to Meepo — a curated home for distinctive internet oddities.",
+      "Makers stay visible, software stays personal.",
     ],
     primary: { label: "Next", kind: "next" },
   },
   {
-    title: "Projects",
+    title: "How it works",
     lines: [
-      "Each card is a project — someone's dream being dragged into reality.",
-      "Click one to visit it and learn more.",
+      "Each card is a project. Click one to visit it — your click earns a meep for you and the project, and adds 2 meeps to the universe.",
+      "You get 10 clicks per day.",
     ],
     primary: { label: "Next", kind: "next" },
   },
   {
-    title: "Meeps",
+    title: "The Observatory",
     lines: [
-      "When you click a project, you both earn a meep.",
-      "Meeps are tiny sparks of attention — yours and theirs.",
-      "You get 10 clicks per day. Choose where your attention goes.",
+      "All meeps flow into the observatory — a shared tracker of collective attention.",
+      "Watch it grow as the community explores.",
     ],
     primary: { label: "Next", kind: "next" },
   },
   {
-    title: "Loves (coming soon)",
+    title: "Get started",
     lines: [
-      "Later, you'll be able to love a project — sending some of your own meeps to help it grow.",
-      "But first, the observatory needs to wake up.",
-    ],
-    primary: { label: "Next", kind: "next" },
-  },
-  {
-    title: "Sign in",
-    lines: [
-      "Your clicks only count when you're signed in.",
       "Sign in with GitHub to start placing your attention.",
+      "Your clicks shape what gets seen.",
     ],
     primary: { label: "Sign in with GitHub", kind: "signin" },
   },
@@ -62,9 +55,14 @@ export function OnboardingBubbles() {
   const [visible, setVisible] = useState(false);
   const [index, setIndex] = useState(0);
 
+  const show = useCallback(() => {
+    setIndex(0);
+    setVisible(true);
+  }, []);
+
   useEffect(() => {
     try {
-      const done = window.localStorage.getItem(STORAGE_KEY);
+      const done = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
       setVisible(done !== "1");
     } catch {
       setVisible(true);
@@ -72,13 +70,21 @@ export function OnboardingBubbles() {
     setReady(true);
   }, []);
 
+  // Listen for replay requests from the info button
+  useEffect(() => {
+    const handler = () => show();
+    window.addEventListener(ONBOARDING_REPLAY_EVENT, handler);
+    return () => window.removeEventListener(ONBOARDING_REPLAY_EVENT, handler);
+  }, [show]);
+
   const dismiss = () => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, "1");
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, "1");
     } catch {
       // ignore: dismiss still closes for the current session
     }
     setVisible(false);
+    window.dispatchEvent(new CustomEvent(ONBOARDING_DISMISS_EVENT));
   };
 
   if (!ready || !visible) return null;
@@ -99,11 +105,11 @@ export function OnboardingBubbles() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+    <div className="pointer-events-none fixed top-20 left-4 z-40 flex px-4">
       <div
         role="dialog"
         aria-label={`Meepo tutorial ${index + 1} of ${BUBBLES.length}: ${bubble.title}`}
-        className="pointer-events-auto w-full max-w-md rounded-2xl border border-border bg-card/95 p-5 shadow-xl backdrop-blur"
+        className="pointer-events-auto w-full max-w-sm rounded-2xl border border-border bg-card/95 p-5 shadow-xl backdrop-blur"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
