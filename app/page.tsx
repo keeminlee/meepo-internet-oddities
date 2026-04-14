@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthButton } from "@/components/AuthButton";
 import { HomeBrowser } from "@/components/HomeBrowser";
 import { Button } from "@/components/ui/button";
 import { BRAND } from "@/lib/constants";
@@ -23,6 +24,13 @@ export default async function HomePage() {
             {BRAND.name} <span className="text-primary">·</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Review
+            </Link>
+            <AuthButton />
             <Link href="/submit">
               <Button size="sm">Post your meep</Button>
             </Link>
