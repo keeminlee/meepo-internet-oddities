@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 
 import { ONBOARDING_STORAGE_KEY } from "./OnboardingBubbles";
 
-const FIRST_MEEP_STORAGE_KEY = "meepo_first_meep_coach";
+export const FIRST_MEEP_SEEN_KEY = "meepo_first_meep_coach";
+export const FIRST_MEEP_PENDING_KEY = "meepo_first_meep_pending";
 
 interface Bubble {
   title: string;
@@ -51,62 +52,33 @@ const BUBBLES: Bubble[] = [
 ];
 
 export function FirstMeepCoach() {
-  const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const [index, setIndex] = useState(0);
 
   const dismiss = useCallback(() => {
     try {
-      window.localStorage.setItem(FIRST_MEEP_STORAGE_KEY, "1");
+      window.localStorage.setItem(FIRST_MEEP_SEEN_KEY, "1");
+      window.localStorage.removeItem(FIRST_MEEP_PENDING_KEY);
     } catch {
-      // ignore: dismiss still closes for the current session
+      // ignore
     }
     setVisible(false);
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const shouldSkip = (): boolean => {
-      try {
-        if (window.localStorage.getItem(FIRST_MEEP_STORAGE_KEY) === "1") return true;
-        // Wait until the primary onboarding has been completed/dismissed.
-        if (window.localStorage.getItem(ONBOARDING_STORAGE_KEY) !== "1") return true;
-      } catch {
-        return false;
-      }
-      return false;
-    };
-
-    const poll = async () => {
-      if (cancelled) return;
-      setReady(true);
-      if (shouldSkip()) return;
-      try {
-        const res = await fetch("/api/me/quest", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as {
-          authenticated?: boolean;
-          used?: number;
-        };
-        if (!cancelled && data.authenticated && (data.used ?? 0) >= 1) {
-          setIndex(0);
-          setVisible(true);
-        }
-      } catch {
-        // ignore network errors; will retry on next tick
-      }
-    };
-
-    poll();
-    const id = window.setInterval(poll, 10_000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
+    try {
+      if (window.localStorage.getItem(FIRST_MEEP_SEEN_KEY) === "1") return;
+      if (window.localStorage.getItem(FIRST_MEEP_PENDING_KEY) !== "1") return;
+      // Don't overlap with the primary onboarding flow.
+      if (window.localStorage.getItem(ONBOARDING_STORAGE_KEY) !== "1") return;
+    } catch {
+      return;
+    }
+    setIndex(0);
+    setVisible(true);
   }, []);
 
-  if (!ready || !visible) return null;
+  if (!visible) return null;
   const bubble = BUBBLES[index];
   const isLast = index === BUBBLES.length - 1;
 
