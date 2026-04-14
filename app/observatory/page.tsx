@@ -1,9 +1,10 @@
-import { Check, Lock, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
+import { MilestoneRow } from "@/components/MilestoneRow";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
-import { getCosmicState, listThresholds, type Threshold } from "@/lib/domain/cosmic";
+import { getCosmicState, listThresholds } from "@/lib/domain/cosmic";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +12,6 @@ export default function ObservatoryPage() {
   ensureBootstrapped();
   const cosmic = getCosmicState();
   const thresholds = listThresholds();
-
-  const reached = thresholds.filter((t) => t.unlocked);
-  const upcoming = thresholds.filter((t) => !t.unlocked);
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,63 +101,3 @@ export default function ObservatoryPage() {
   );
 }
 
-function MilestoneRow({
-  threshold,
-  cosmicMeeps,
-  isLast,
-}: {
-  threshold: Threshold;
-  cosmicMeeps: number;
-  isLast: boolean;
-}) {
-  const reached = threshold.unlocked;
-  const progressPct = threshold.meep_target === 0
-    ? 100
-    : Math.min(100, Math.round((cosmicMeeps / threshold.meep_target) * 100));
-
-  return (
-    <div className="flex gap-4">
-      {/* Timeline column */}
-      <div className="flex flex-col items-center">
-        <div
-          className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${
-            reached
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-muted-foreground"
-          }`}
-        >
-          {reached ? <Check className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5" />}
-        </div>
-        {!isLast && (
-          <div className={`w-0.5 flex-1 min-h-8 ${reached ? "bg-primary/40" : "bg-border"}`} />
-        )}
-      </div>
-
-      {/* Content */}
-      <div className={`pb-6 ${reached ? "" : "opacity-70"}`}>
-        <div className="flex items-baseline gap-2">
-          <span className="font-display font-bold">{threshold.label}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {threshold.meep_target.toLocaleString()} meeps
-          </span>
-        </div>
-        {reached && threshold.unlocked_at && (
-          <p className="text-xs text-primary mt-0.5">
-            Reached {new Date(threshold.unlocked_at).toLocaleDateString()}
-          </p>
-        )}
-        {!reached && (
-          <div className="mt-1 flex items-center gap-2">
-            <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary/50 transition-all"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{progressPct}%</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
