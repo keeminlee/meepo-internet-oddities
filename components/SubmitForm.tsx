@@ -18,6 +18,7 @@ export function SubmitForm() {
   const [name, setName] = useState("");
   const [pitch, setPitch] = useState("");
   const [url, setUrl] = useState("");
+  const [repoUrl, setRepoUrl] = useState("");
   const [whyMade, setWhyMade] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -59,6 +60,7 @@ export function SubmitForm() {
           name,
           one_line_pitch: pitch,
           external_url: url,
+          repo_url: repoUrl,
           screenshot_url: screenshotUrl,
           tags,
           why_i_made_this: whyMade,
@@ -110,6 +112,18 @@ export function SubmitForm() {
           onChange={(e) => setUrl(e.target.value)}
           required
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="repo-url">Repository URL (optional)</Label>
+        <Input
+          id="repo-url"
+          type="url"
+          value={repoUrl}
+          placeholder="https://github.com/you/your-meep"
+          onChange={(e) => setRepoUrl(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">GitHub, GitLab, Codeberg, or any source host.</p>
       </div>
 
       <div className="space-y-1.5">

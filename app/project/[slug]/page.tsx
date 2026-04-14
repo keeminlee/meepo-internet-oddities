@@ -1,4 +1,4 @@
-import { ArrowLeft, MousePointerClick } from "lucide-react";
+import { ArrowLeft, Github, MousePointerClick } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -95,7 +95,22 @@ export default async function ProjectDetailPage({ params }: Props) {
             ))}
           </div>
 
-          {project.external_url && <VisitButton slug={project.slug} externalUrl={project.external_url} />}
+          <div className="flex flex-wrap items-center gap-3">
+            {project.external_url && (
+              <VisitButton slug={project.slug} externalUrl={project.external_url} />
+            )}
+            {project.repo_url && (
+              <a
+                href={project.repo_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+              >
+                <Github className="h-4 w-4" />
+                View source
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="space-y-8 border-t border-border pt-8">

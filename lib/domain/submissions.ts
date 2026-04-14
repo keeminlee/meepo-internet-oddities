@@ -10,6 +10,7 @@ export interface SubmissionInput {
   name: string;
   one_line_pitch: string;
   external_url: string;
+  repo_url?: string;
   screenshot_url: string;
   tags?: string[];
   why_i_made_this?: string;
@@ -41,6 +42,7 @@ export function createSubmission(
   if (one_line_pitch.length > 150)
     return { ok: false, error: "pitch_too_long", status: 400 };
   const external_url = input.external_url.trim();
+  const repo_url = (input.repo_url ?? "").trim();
   const screenshot_url = input.screenshot_url.trim();
   if (!external_url) return { ok: false, error: "url_required", status: 400 };
   if (!screenshot_url)
@@ -70,10 +72,10 @@ export function createSubmission(
     db.prepare(
       `INSERT INTO projects (
         id, creator_id, owner_user_id, slug, name, project_avatar_url, one_line_pitch,
-        screenshot_url, external_url, built_with, tags, source_type, status, clicks_sent,
+        screenshot_url, external_url, repo_url, built_with, tags, source_type, status, clicks_sent,
         about, why_i_made_this, featured, approved, is_demo, rejected, rejection_reason,
         rejected_at, rejected_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, 0, 0, 0, '', '', '', ?, '')`,
+      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, 0, 0, 0, '', '', '', ?, '')`,
     ).run(
       id,
       userId,
@@ -83,6 +85,7 @@ export function createSubmission(
       one_line_pitch,
       screenshot_url,
       external_url,
+      repo_url,
       JSON.stringify(tags),
       (input.why_i_made_this ?? "").trim().slice(0, 1000),
       created_at,

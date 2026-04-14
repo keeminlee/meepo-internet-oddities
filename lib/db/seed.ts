@@ -25,6 +25,7 @@ type LegacyProject = {
   one_line_pitch?: string;
   screenshot_url?: string;
   external_url?: string;
+  repo_url?: string;
   built_with?: string;
   tags?: string[];
   source_type?: string;
@@ -129,12 +130,12 @@ export function runSeed(options: {
   const insertProject = db.prepare(`
     INSERT OR IGNORE INTO projects (
       id, creator_id, owner_user_id, slug, name, project_avatar_url, one_line_pitch,
-      screenshot_url, external_url, built_with, tags, source_type, status, clicks_sent,
+      screenshot_url, external_url, repo_url, built_with, tags, source_type, status, clicks_sent,
       about, why_i_made_this, featured, approved, is_demo, rejected, rejection_reason,
       rejected_at, rejected_by, created_at, updated_at
     ) VALUES (
       @id, @creator_id, @owner_user_id, @slug, @name, @project_avatar_url, @one_line_pitch,
-      @screenshot_url, @external_url, @built_with, @tags, @source_type, @status, @clicks_sent,
+      @screenshot_url, @external_url, @repo_url, @built_with, @tags, @source_type, @status, @clicks_sent,
       @about, @why_i_made_this, @featured, @approved, @is_demo, @rejected, @rejection_reason,
       @rejected_at, @rejected_by, @created_at, @updated_at
     )
@@ -201,6 +202,7 @@ export function runSeed(options: {
         one_line_pitch: p.one_line_pitch ?? "",
         screenshot_url: p.screenshot_url ?? "",
         external_url: p.external_url ?? "",
+        repo_url: p.repo_url ?? "",
         built_with: p.built_with ?? "",
         tags: JSON.stringify(p.tags ?? []),
         source_type: p.source_type ?? "both",

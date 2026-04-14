@@ -101,6 +101,7 @@ export interface ProjectPatch {
   name?: string;
   one_line_pitch?: string;
   external_url?: string;
+  repo_url?: string;
   screenshot_url?: string;
   why_i_made_this?: string;
   tags?: string[];
@@ -129,6 +130,7 @@ export function updateProject(
   let name = current.name;
   let one_line_pitch = current.one_line_pitch;
   let external_url = current.external_url;
+  let repo_url = current.repo_url;
   let screenshot_url = current.screenshot_url;
   let why_i_made_this = current.why_i_made_this;
   let tags = current.tags;
@@ -145,6 +147,7 @@ export function updateProject(
       return { ok: false, error: "pitch_too_long", status: 400 };
   }
   if (patch.external_url !== undefined) external_url = patch.external_url.trim();
+  if (patch.repo_url !== undefined) repo_url = patch.repo_url.trim();
   if (patch.screenshot_url !== undefined)
     screenshot_url = patch.screenshot_url.trim();
   if (patch.why_i_made_this !== undefined)
@@ -166,7 +169,7 @@ export function updateProject(
 
   db.prepare(
     `UPDATE projects SET
-      name = ?, one_line_pitch = ?, external_url = ?, screenshot_url = ?,
+      name = ?, one_line_pitch = ?, external_url = ?, repo_url = ?, screenshot_url = ?,
       why_i_made_this = ?, tags = ?, source_type = 'both', updated_at = ?,
       rejected = CASE WHEN ? = 1 THEN 0 ELSE rejected END,
       rejection_reason = CASE WHEN ? = 1 THEN '' ELSE rejection_reason END,
@@ -178,6 +181,7 @@ export function updateProject(
     name,
     one_line_pitch,
     external_url,
+    repo_url,
     screenshot_url,
     why_i_made_this,
     JSON.stringify(tags),

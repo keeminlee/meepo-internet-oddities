@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         name?: string;
         one_line_pitch?: string;
         external_url?: string;
+        repo_url?: string;
         screenshot_url?: string;
         why_i_made_this?: string;
         tags?: string[];

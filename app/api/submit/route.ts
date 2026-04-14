@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
         name?: string;
         one_line_pitch?: string;
         external_url?: string;
+        repo_url?: string;
         screenshot_url?: string;
         tags?: string[];
         why_i_made_this?: string;
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       name: body.name ?? "",
       one_line_pitch: body.one_line_pitch ?? "",
       external_url: body.external_url ?? "",
+      repo_url: body.repo_url ?? "",
       screenshot_url: body.screenshot_url ?? "",
       tags: body.tags,
       why_i_made_this: body.why_i_made_this,

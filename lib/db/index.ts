@@ -9,7 +9,7 @@ import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
-import { SCHEMA_DDL } from "./schema";
+import { COLUMN_ADDITIONS, SCHEMA_DDL } from "./schema";
 
 let cached: Database.Database | null = null;
 
@@ -34,6 +34,15 @@ export function runMigrations(db: Database.Database = getDb()): void {
   db.exec("BEGIN");
   try {
     for (const stmt of SCHEMA_DDL) db.exec(stmt);
+    for (const add of COLUMN_ADDITIONS) {
+      const existing = db
+        .prepare<[], { name: string }>(`PRAGMA table_info(${add.table})`)
+        .all()
+        .map((r) => r.name);
+      if (!existing.includes(add.column)) {
+        db.exec(`ALTER TABLE ${add.table} ADD COLUMN ${add.column} ${add.definition}`);
+      }
+    }
     db.exec("COMMIT");
   } catch (err) {
     db.exec("ROLLBACK");

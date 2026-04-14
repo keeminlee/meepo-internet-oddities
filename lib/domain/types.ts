@@ -37,6 +37,7 @@ export interface ProjectRow {
   one_line_pitch: string;
   screenshot_url: string;
   external_url: string;
+  repo_url: string;
   built_with: string;
   tags: string; // JSON
   source_type: string;
@@ -86,6 +87,7 @@ export interface Project {
   one_line_pitch: string;
   screenshot_url: string;
   external_url: string;
+  repo_url: string;
   built_with: string;
   tags: string[];
   source_type: string;
@@ -135,6 +137,7 @@ export function mapProject(row: ProjectRow): Project {
     one_line_pitch: row.one_line_pitch,
     screenshot_url: row.screenshot_url,
     external_url: row.external_url,
+    repo_url: row.repo_url ?? "",
     built_with: row.built_with,
     tags: parseJsonArray(row.tags),
     source_type: row.source_type,

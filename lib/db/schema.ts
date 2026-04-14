@@ -48,6 +48,7 @@ export const SCHEMA_DDL: string[] = [
     one_line_pitch TEXT NOT NULL DEFAULT '',
     screenshot_url TEXT NOT NULL DEFAULT '',
     external_url TEXT NOT NULL DEFAULT '',
+    repo_url TEXT NOT NULL DEFAULT '',
     built_with TEXT NOT NULL DEFAULT '',
     tags TEXT NOT NULL DEFAULT '[]',
     source_type TEXT NOT NULL DEFAULT 'both',
@@ -79,3 +80,19 @@ export const SCHEMA_DDL: string[] = [
   `CREATE INDEX IF NOT EXISTS idx_projects_featured ON projects(featured)`,
   `CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`,
 ];
+
+// Column additions applied after SCHEMA_DDL. Each entry adds a column to an
+// existing table only if it is not already present — SQLite has no
+// `ALTER TABLE ADD COLUMN IF NOT EXISTS`, so runMigrations() inspects
+// `PRAGMA table_info` to stay idempotent.
+export interface ColumnAddition {
+  table: string;
+  column: string;
+  // Full column definition appended after `ADD COLUMN ${column} `.
+  definition: string;
+}
+
+export const COLUMN_ADDITIONS: ColumnAddition[] = [
+  { table: "projects", column: "repo_url", definition: "TEXT NOT NULL DEFAULT ''" },
+];
+
