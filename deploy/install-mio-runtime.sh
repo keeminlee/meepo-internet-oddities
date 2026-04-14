@@ -39,7 +39,7 @@ if command -v nginx >/dev/null 2>&1; then
   echo "[runtime] creating certbot webroot"
   sudo install -d -m 0755 /var/www/certbot
   echo "[runtime] testing nginx config"
-  if sudo nginx -t 2>&1; then
+  if sudo nginx -t; then
     sudo systemctl reload nginx
   else
     echo "[runtime] WARNING: nginx config test failed; TLS certs may not exist yet"

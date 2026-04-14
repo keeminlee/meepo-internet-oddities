@@ -176,7 +176,7 @@ certbot_stage() {
   fi
 
   sudo certbot renew --non-interactive 2>&1 || {
-    log "WARNING: certbot renew exited non-zero (cert may not be due for renewal)"
+    log "WARNING: certbot renew failed — check network, permissions, or challenge config"
   }
 
   return 0
@@ -198,7 +198,7 @@ nginx_stage() {
     sudo ln -sf "$dest" "/etc/nginx/sites-enabled/$NGINX_SITE"
   fi
 
-  if sudo nginx -t 2>&1; then
+  if sudo nginx -t; then
     sudo systemctl reload nginx
   else
     log "WARNING: nginx config test failed; skipping reload (check TLS certs for $CERT_DOMAIN)"
