@@ -138,7 +138,7 @@ See `.env.example` for full list. Key variables:
 ## Known Limitations
 
 1. **Demo data filtered out** — 14 seed projects have `is_demo = 1` and are excluded from public API. Only real submissions appear.
-2. **No production deployment config** — No Dockerfile, systemd unit, or nginx config yet.
+2. **No production deploy config** — ~~No Dockerfile, systemd unit, or nginx config yet.~~ Deploy config updated for Next.js + SQLite in `deploy/`.
 3. **`next build` slow on HDD** — Build works but takes a long time on HDD-over-USB storage.
 4. **Lockfile warning** — Next.js warns about multiple lockfiles in the monorepo. Can silence with `outputFileTracingRoot` in next.config.ts.
 5. **Legacy `.env`** — The old `.env` (for the Vite server) still exists in the repo root. The Next.js app reads `.env` and `.env.local` automatically.
