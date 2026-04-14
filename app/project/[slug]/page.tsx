@@ -1,0 +1,126 @@
+import { ArrowLeft, MousePointerClick } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+
+import { StatusBadge } from "@/components/StatusBadge";
+import { TagBadge } from "@/components/TagBadge";
+import { VisitButton } from "@/components/VisitButton";
+import { BRAND } from "@/lib/constants";
+import { ensureBootstrapped } from "@/lib/db/bootstrap";
+import { getProjectBySlug } from "@/lib/domain/projects";
+
+export const dynamic = "force-dynamic";
+
+interface Props {
+  params: Promise<{ slug: string }>;
+}
+
+export default async function ProjectDetailPage({ params }: Props) {
+  ensureBootstrapped();
+  const { slug } = await params;
+  const project = getProjectBySlug(slug);
+  if (!project) notFound();
+
+  const creatorName = project.creator?.display_name ?? "Unknown";
+  const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="container mx-auto flex items-center justify-between px-4 py-3">
+          <Link href="/" className="font-display text-xl font-bold tracking-tight">
+            {BRAND.name} <span className="text-primary">·</span>
+          </Link>
+        </div>
+      </header>
+
+      <main className="container mx-auto max-w-4xl px-4 py-8 space-y-8">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to browse
+        </Link>
+
+        {project.screenshot_url && (
+          <div className="overflow-hidden rounded-xl border border-border">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={project.screenshot_url}
+              alt={project.name}
+              className="w-full object-cover"
+              style={{ maxHeight: "480px" }}
+            />
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge status={project.status} />
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <MousePointerClick className="h-4 w-4" />
+              <span className="font-semibold">{(project.clicks_sent || 0).toLocaleString()}</span> clicks sent
+            </div>
+          </div>
+
+          <h1 className="font-display text-4xl font-bold md:text-5xl">{project.name}</h1>
+          <p className="text-xl text-muted-foreground">{project.one_line_pitch}</p>
+
+          <div className="flex items-center gap-3">
+            {project.creator?.avatar_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={project.creator.avatar_url}
+                alt={creatorName}
+                className="h-10 w-10 rounded-full"
+              />
+            ) : (
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                {creatorName.charAt(0)}
+              </div>
+            )}
+            <div>
+              <div className="font-medium">
+                {creatorName}
+                {creatorHandle && (
+                  <span className="ml-1 text-sm text-muted-foreground">{creatorHandle}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {project.tags.map((tag) => (
+              <TagBadge key={tag} tag={tag} size="md" />
+            ))}
+          </div>
+
+          {project.external_url && <VisitButton slug={project.slug} externalUrl={project.external_url} />}
+        </div>
+
+        <div className="space-y-8 border-t border-border pt-8">
+          {project.about && (
+            <div className="space-y-2">
+              <h2 className="font-display text-xl font-bold">Artifact note</h2>
+              <p className="text-muted-foreground leading-relaxed">{project.about}</p>
+            </div>
+          )}
+
+          {project.why_i_made_this && (
+            <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
+              <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
+              <p className="text-muted-foreground leading-relaxed italic">
+                &ldquo;{project.why_i_made_this}&rdquo;
+              </p>
+              <p className="text-sm font-medium">— {creatorName}</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
+        <p>{BRAND.footerLine}</p>
+      </footer>
+    </div>
+  );
+}
