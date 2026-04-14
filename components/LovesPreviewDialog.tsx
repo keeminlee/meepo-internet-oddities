@@ -15,6 +15,10 @@ import {
 
 const SEND_OPTIONS = [1, 3, 5] as const;
 
+export function isLovesLabel(label: string): boolean {
+  return /love/i.test(label);
+}
+
 export function LovesPreviewDialog({ children }: { children: React.ReactNode }) {
   const [amount, setAmount] = useState<number>(3);
   const [sent, setSent] = useState(false);

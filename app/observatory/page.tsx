@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { LovesPreviewDialog, isLovesLabel } from "@/components/LovesPreviewDialog";
 import { MeepField } from "@/components/MeepField";
 import { MilestoneRow } from "@/components/MilestoneRow";
 import { BRAND } from "@/lib/constants";
@@ -51,7 +52,19 @@ export default function ObservatoryPage() {
           <section className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">
-                Next milestone: <span className="text-primary">{cosmic.next_threshold.label}</span>
+                Next milestone:{" "}
+                {isLovesLabel(cosmic.next_threshold.label) ? (
+                  <LovesPreviewDialog>
+                    <button
+                      type="button"
+                      className="text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded"
+                    >
+                      {cosmic.next_threshold.label}
+                    </button>
+                  </LovesPreviewDialog>
+                ) : (
+                  <span className="text-primary">{cosmic.next_threshold.label}</span>
+                )}
               </span>
               <span className="text-muted-foreground tabular-nums">
                 {cosmic.total_meeps.toLocaleString()} / {cosmic.next_threshold.meep_target.toLocaleString()}
