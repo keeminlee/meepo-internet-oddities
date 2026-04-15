@@ -139,6 +139,7 @@ export interface ProjectPatch {
   repo_url?: string;
   screenshot_url?: string;
   why_i_made_this?: string;
+  about?: string;
   tags?: string[];
   project_status?: string;
 }
@@ -169,6 +170,7 @@ export function updateProject(
   let repo_url = current.repo_url;
   let screenshot_url = current.screenshot_url;
   let why_i_made_this = current.why_i_made_this;
+  let about = current.about;
   let tags = current.tags;
   let project_status = current.project_status;
 
@@ -189,6 +191,8 @@ export function updateProject(
     screenshot_url = patch.screenshot_url.trim();
   if (patch.why_i_made_this !== undefined)
     why_i_made_this = patch.why_i_made_this.trim().slice(0, 1000);
+  if (patch.about !== undefined)
+    about = patch.about.trim().slice(0, 5000);
   if (patch.tags !== undefined) {
     tags = patch.tags.slice(0, 5);
     if (tags.includes("Meepo") && !options.isMeepoWriter) {
@@ -213,7 +217,7 @@ export function updateProject(
   db.prepare(
     `UPDATE projects SET
       name = ?, one_line_pitch = ?, external_url = ?, repo_url = ?, screenshot_url = ?,
-      why_i_made_this = ?, tags = ?, source_type = 'both', updated_at = ?,
+      why_i_made_this = ?, about = ?, tags = ?, source_type = 'both', updated_at = ?,
       project_status = ?,
       rejected = CASE WHEN ? = 1 THEN 0 ELSE rejected END,
       rejection_reason = CASE WHEN ? = 1 THEN '' ELSE rejection_reason END,
@@ -228,6 +232,7 @@ export function updateProject(
     repo_url,
     screenshot_url,
     why_i_made_this,
+    about,
     JSON.stringify(tags),
     updated_at,
     project_status,
@@ -239,6 +244,35 @@ export function updateProject(
     slug,
     ownerId,
   );
+
+  // Write-through to the current published snapshot so SnapshotView, which
+  // reads from project_snapshots (not projects), reflects the edit
+  // immediately. Skipped silently when no snapshot exists yet —
+  // ensureFirstSnapshot will pick up the latest projects values on first read.
+  const latestSnapshot = db
+    .prepare<[string], { id: string }>(
+      `SELECT id FROM project_snapshots
+       WHERE project_id = ? AND is_draft = 0
+       ORDER BY published_at DESC LIMIT 1`,
+    )
+    .get(row.id);
+  if (latestSnapshot) {
+    db.prepare(
+      `UPDATE project_snapshots SET
+         title = ?, tagline = ?, description = ?, primary_url = ?,
+         tags = ?, project_status = ?, updated_at = ?
+       WHERE id = ?`,
+    ).run(
+      name,
+      one_line_pitch,
+      about,
+      external_url,
+      JSON.stringify(tags),
+      project_status,
+      updated_at,
+      latestSnapshot.id,
+    );
+  }
 
   const final = getProjectBySlugIncludingUnapproved(slug);
   if (!final) return { ok: false, error: "lost", status: 500 };

@@ -87,13 +87,28 @@
 }
 
 @layer utilities {
-  /* Coach bubble highlight: applied to anchor elements while a coach bubble
-     with highlightAnchor:true is active. Mirrors the card hover visual. */
-  .coach-highlight {
+  /* Coach highlight: applied to anchor-wrapper divs while a coach bubble
+     with highlightAnchor:true is active. Mirrors each card's own :hover
+     visual state — the card's Link (<a>) child gets lifted + glow + its
+     accent-colored border. Per-id selectors pick the right accent color
+     (violet for the universe card, emerald for the daily quest card). */
+  .coach-highlight > a {
     transform: translateY(-4px);
+    transition: all 0.3s ease;
+  }
+  #quest-card-universe.coach-highlight > a {
     box-shadow: 0 10px 15px -3px hsl(var(--primary) / 0.1);
     border-color: hsl(var(--primary) / 0.5) !important;
-    transition: all 0.3s ease;
+  }
+  #quest-card-universe.coach-highlight > a h3 {
+    color: hsl(var(--primary));
+  }
+  #quest-card-daily.coach-highlight > a {
+    box-shadow: 0 10px 15px -3px rgb(16 185 129 / 0.1);
+    border-color: rgb(16 185 129 / 0.5) !important;
+  }
+  #quest-card-daily.coach-highlight > a h3 {
+    color: rgb(16 185 129);
   }
 }
 

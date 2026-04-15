@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DraftControl } from "@/components/DraftControl";
-import { ProjectEditor } from "@/components/ProjectEditor";
 import { SnapshotPageClient } from "@/components/SnapshotPageClient";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VisitButton } from "@/components/VisitButton";
@@ -147,29 +146,44 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
           </div>
         </div>
 
-        {/* Creator info block (non-snapshot) */}
-        <div className="flex items-center gap-3">
-          {project.creator?.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={project.creator.avatar_url}
-              alt={creatorName}
-              className="h-10 w-10 rounded-full"
-            />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-              {creatorName.charAt(0)}
-            </div>
-          )}
-          <div>
-            <div className="font-medium">
-              {creatorName}
-              {creatorHandle && (
-                <span className="ml-1 text-sm text-muted-foreground">{creatorHandle}</span>
+        {/* Creator info block (non-snapshot). Clickable when the creator has
+            a handle — routes to /creator/[handle]. */}
+        {(() => {
+          const body = (
+            <>
+              {project.creator?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={project.creator.avatar_url}
+                  alt={creatorName}
+                  className="h-10 w-10 rounded-full"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                  {creatorName.charAt(0)}
+                </div>
               )}
-            </div>
-          </div>
-        </div>
+              <div>
+                <div className="font-medium">
+                  {creatorName}
+                  {creatorHandle && (
+                    <span className="ml-1 text-sm text-muted-foreground">{creatorHandle}</span>
+                  )}
+                </div>
+              </div>
+            </>
+          );
+          return project.creator?.handle ? (
+            <Link
+              href={`/creator/${project.creator.handle}`}
+              className="inline-flex items-center gap-3 rounded-md transition-colors hover:bg-muted/50 -mx-2 px-2 py-1"
+            >
+              {body}
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3">{body}</div>
+          );
+        })()}
 
         {/* Snapshot content — or fallback to legacy links if no snapshots */}
         {isViewingLatest && <DraftControl slug={slug} />}
@@ -178,6 +192,10 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             slug={slug}
             snapshot={snapshot}
             totalVersions={totalVersions}
+            isOwner={isOwner}
+            isViewingLatest={isViewingLatest}
+            whyMade={project.why_i_made_this}
+            repoUrl={project.repo_url}
           />
         ) : (
           /* Fallback: no snapshots (edge case after ensureFirstSnapshot) */
@@ -202,22 +220,6 @@ export default async function ProjectDetailPage({ params, searchParams }: Props)
             </div>
           </div>
         )}
-
-        {/* Editor (non-snapshot, owner-only via ProjectEditor's own auth check) */}
-        <div className="border-t border-border pt-8">
-          <ProjectEditor
-            project={{
-              slug: project.slug,
-              owner_user_id: project.owner_user_id,
-              name: project.name,
-              one_line_pitch: project.one_line_pitch,
-              external_url: project.external_url,
-              repo_url: project.repo_url,
-              why_i_made_this: project.why_i_made_this,
-              tags: project.tags,
-            }}
-          />
-        </div>
 
         {/* Legacy maker note (non-snapshot) */}
         {project.why_i_made_this && (

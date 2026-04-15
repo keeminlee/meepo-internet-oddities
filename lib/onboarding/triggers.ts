@@ -31,6 +31,9 @@ export interface Bubble {
   highlightAnchor?: boolean;
   /** Actions dispatched when this bubble becomes active. */
   onActivate?: { switchTab?: string };
+  /** Actions dispatched when this bubble is dismissed (via any path — CTA,
+   *  Skip, X). Fires before the manager marks the trigger as seen. */
+  onDismiss?: { switchTab?: string };
 }
 
 export type TriggerAudience = "all" | "anonymous" | "authenticated";
@@ -96,7 +99,7 @@ export const TRIGGERS: Trigger[] = [
         title: "Jump in",
         lines: [
           "Explore projects, give attention to the ones that resonate.",
-          "Sign in with GitHub when you're ready to bring your own.",
+          "Sign in when you're ready to bring your own.",
         ],
         primary: { label: "Explore", kind: "scroll", scrollTarget: "projects" },
       },
@@ -121,7 +124,7 @@ export const TRIGGERS: Trigger[] = [
       {
         title: "It adds up",
         lines: [
-          "Every meep earned across the site flows into one shared counter — the {link:universe:/universe}.",
+          "Every meep earned across the site flows into one shared counter — the universe.",
           "As more people explore, the universe grows. That's the whole idea: collective attention, not algorithms.",
         ],
         primary: { label: "Next", kind: "next" },
@@ -143,7 +146,7 @@ export const TRIGGERS: Trigger[] = [
       {
         title: "Find your favorites",
         lines: [
-          "Projects you've given attention to show up here. Come back anytime to revisit them.",
+          "Projects you've given attention to show up in your Most Loved. Come back anytime to revisit them.",
           "Now go and continue exploring!",
         ],
         primary: { label: "Keep exploring", kind: "scroll", scrollTarget: "projects" },
@@ -151,6 +154,9 @@ export const TRIGGERS: Trigger[] = [
         anchorSide: "below",
         highlightAnchor: true,
         onActivate: { switchTab: "most_loved" },
+        // On dismissal (CTA, Skip, or X) switch the tab back to Newest so the
+        // viewer lands on fresh projects as they continue exploring.
+        onDismiss: { switchTab: "newest" },
       },
     ],
   },

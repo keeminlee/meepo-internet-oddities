@@ -73,7 +73,16 @@ export function OnboardingTriggerManager({ balance, isAuthenticated }: Props) {
   useEffect(() => {
     migrateLegacy();
     setSeen(readSeen());
-    // Read last-mint context for first_meep bubble token interpolation.
+    // Always-available defaults first, then overlay mint-specific fields when
+    // present. Fallbacks for projectName / authorHandle let the first bubble
+    // render readable copy even when there's no concrete last-mint context
+    // (e.g., force-preview via the dev panel). Slugs stay empty → parseLine
+    // drops the link wrapper and renders fallback text as plain prose.
+    const nextContext: Record<string, string> = {
+      dailyClickCap: String(DAILY_CLICK_CAP),
+      projectName: "a passion project crafted",
+      authorHandle: "real people",
+    };
     try {
       const raw = window.localStorage.getItem(LAST_MINT_KEY);
       if (raw) {
@@ -82,18 +91,18 @@ export function OnboardingTriggerManager({ balance, isAuthenticated }: Props) {
           project_slug?: string;
           author_handle?: string;
         };
-        setMintContext({
-          projectName: parsed.project_name ?? "",
-          projectSlug: parsed.project_slug ?? "",
-          authorHandle: parsed.author_handle ?? "",
+        if (parsed.project_name) nextContext.projectName = parsed.project_name;
+        if (parsed.project_slug) nextContext.projectSlug = parsed.project_slug;
+        if (parsed.author_handle) {
+          nextContext.authorHandle = parsed.author_handle;
           // authorSlug = handle (creator slugs = handles in this app)
-          authorSlug: parsed.author_handle ?? "",
-          dailyClickCap: String(DAILY_CLICK_CAP),
-        });
+          nextContext.authorSlug = parsed.author_handle;
+        }
       }
     } catch {
       // noop
     }
+    setMintContext(nextContext);
     setReady(true);
   }, []);
 

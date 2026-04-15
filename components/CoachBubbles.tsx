@@ -41,8 +41,11 @@ function parseLine(
   ctx: Record<string, string>,
   lineKey: number,
 ): React.ReactNode[] {
-  // Match {link:displayText:hrefTemplate} — greedy up to last } in the token
-  const linkPattern = /\{link:([^:}]+):([^}]+)\}/g;
+  // Match {link:displayKey:hrefTemplate} where hrefTemplate may contain a
+  // balanced single-level `{token}` (e.g. /project/{projectSlug}). The href
+  // group alternates between non-brace chars and `{...}` groups so nested
+  // template tokens don't prematurely end the match.
+  const linkPattern = /\{link:([^:}]+):((?:[^{}]|\{[^{}]*\})+)\}/g;
   const nodes: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -51,31 +54,42 @@ function parseLine(
     const before = line.slice(lastIndex, match.index);
     if (before) nodes.push(interpolateTokens(before, ctx));
 
-    const displayText = interpolateTokens(match[1], ctx);
+    // Display key is a bare token name — look it up in ctx directly. If not
+    // present, fall back to treating the text as a plain string (with any
+    // `{key}` tokens inline interpolated).
+    const rawDisplay = match[1];
+    const displayText = ctx[rawDisplay] ?? interpolateTokens(rawDisplay, ctx);
     const href = interpolateTokens(match[2], ctx);
-    const isInternal = href.startsWith("/");
-    if (isInternal) {
-      nodes.push(
-        <Link
-          key={`link-${lineKey}-${match.index}`}
-          href={href}
-          className="text-primary underline hover:opacity-80"
-        >
-          {displayText}
-        </Link>,
-      );
+    // If any token inside the href failed to resolve (still contains `{...}`),
+    // fall back to rendering display text as plain prose — no broken link.
+    const unresolved = /\{[^}]+\}/.test(href);
+    if (unresolved) {
+      nodes.push(displayText);
     } else {
-      nodes.push(
-        <a
-          key={`link-${lineKey}-${match.index}`}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary underline hover:opacity-80"
-        >
-          {displayText}
-        </a>,
-      );
+      const isInternal = href.startsWith("/");
+      if (isInternal) {
+        nodes.push(
+          <Link
+            key={`link-${lineKey}-${match.index}`}
+            href={href}
+            className="text-primary underline hover:opacity-80"
+          >
+            {displayText}
+          </Link>,
+        );
+      } else {
+        nodes.push(
+          <a
+            key={`link-${lineKey}-${match.index}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline hover:opacity-80"
+          >
+            {displayText}
+          </a>,
+        );
+      }
     }
     lastIndex = match.index + match[0].length;
   }
@@ -191,14 +205,42 @@ export function CoachBubbles({
     );
   }, [index, bubble?.onActivate?.switchTab]);
 
+  // Auto-scroll the anchor element into view when a new anchored bubble
+  // activates. Uses block:"center" — native scrollIntoView no-ops when the
+  // element is already centered, so this is safe to call unconditionally.
+  // We defer one frame so tab-switch re-renders (onActivate) settle first.
+  useEffect(() => {
+    if (!effectiveAnchorId) return;
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(effectiveAnchorId);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [effectiveAnchorId, index]);
+
   if (!bubble) return null;
 
   const isLast = index === bubbles.length - 1;
 
+  // Dismissal wrapper: dispatches bubble.onDismiss.switchTab (if set) before
+  // invoking the manager's onDismiss. Use for every dismiss path — X, Skip,
+  // and primary-CTA kinds that close the coach.
+  const handleDismiss = () => {
+    if (bubble.onDismiss?.switchTab) {
+      window.dispatchEvent(
+        new CustomEvent("meepo:coach-activate-tab", {
+          detail: { tab: bubble.onDismiss.switchTab },
+        }),
+      );
+    }
+    onDismiss();
+  };
+
   const onPrimary = () => {
     const p = bubble.primary;
     if (p.kind === "signin") {
-      onDismiss();
+      handleDismiss();
       window.location.href = "/api/auth/github";
       return;
     }
@@ -211,7 +253,7 @@ export function CoachBubbles({
       return;
     }
     if (p.kind === "scroll") {
-      onDismiss();
+      handleDismiss();
       if (p.scrollTarget) {
         const id = p.scrollTarget.replace(/^#/, "");
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -219,7 +261,7 @@ export function CoachBubbles({
       return;
     }
     // "next"
-    if (isLast) onDismiss();
+    if (isLast) handleDismiss();
     else setIndex((i) => i + 1);
   };
 
@@ -244,7 +286,7 @@ export function CoachBubbles({
           </div>
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={handleDismiss}
             aria-label="Dismiss tutorial"
             className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           >
@@ -259,7 +301,7 @@ export function CoachBubbles({
         <div className="mt-4 flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={onDismiss}
+            onClick={handleDismiss}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             Skip

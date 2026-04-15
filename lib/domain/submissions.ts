@@ -11,7 +11,11 @@ export interface SubmissionInput {
   one_line_pitch: string;
   external_url: string;
   repo_url?: string;
+  /** Primary screenshot — stored in projects.screenshot_url for legacy cards. */
   screenshot_url: string;
+  /** All screenshots for the initial v1 snapshot, ordered 1..N (max 3).
+   *  When omitted, falls back to `[screenshot_url]`. */
+  screenshot_urls?: string[];
   tags?: string[];
   why_i_made_this?: string;
 }
@@ -78,6 +82,18 @@ export function createSubmission(
   const created_at = new Date().toISOString().split("T")[0];
   const autoApprove = isAutoApproveEnabled();
   const approved = autoApprove ? 1 : 0;
+
+  // Normalize screenshot list: prefer explicit screenshot_urls, otherwise
+  // fall back to the single screenshot_url. Cap at 3 (schema invariant).
+  const screenshotUrls = (
+    input.screenshot_urls && input.screenshot_urls.length > 0
+      ? input.screenshot_urls
+      : [screenshot_url]
+  )
+    .map((u) => u.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
   const tx = db.transaction(() => {
     db.prepare(
       `INSERT INTO projects (
@@ -93,7 +109,7 @@ export function createSubmission(
       slug,
       name,
       one_line_pitch,
-      screenshot_url,
+      screenshotUrls[0] ?? screenshot_url,
       external_url,
       repo_url,
       JSON.stringify(tags),
@@ -104,6 +120,26 @@ export function createSubmission(
     db.prepare(
       "INSERT INTO submissions (project_id, user_id, submitted_at) VALUES (?, ?, ?)",
     ).run(id, userId, new Date().toISOString());
+
+    // Eagerly seed v1 snapshot with ALL screenshots (up to 3). Lazy
+    // ensureFirstSnapshot on first page view becomes a no-op (count > 0).
+    const now = new Date().toISOString();
+    const snapId = randomUUID();
+    db.prepare(
+      `INSERT INTO project_snapshots (
+         id, project_id, version_number, title, tagline, description, primary_url,
+         secondary_links, tags, project_status, update_title, update_body,
+         is_draft, created_at, published_at, updated_at
+       ) VALUES (?, ?, 1, ?, ?, '', ?, NULL, ?, 'in progress', NULL, NULL, 0, ?, ?, ?)`,
+    ).run(snapId, id, name, one_line_pitch, external_url, JSON.stringify(tags), now, now, now);
+
+    const ssStmt = db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES (?, ?, ?, ?, '', ?)`,
+    );
+    for (let i = 0; i < screenshotUrls.length; i++) {
+      ssStmt.run(randomUUID(), snapId, i + 1, screenshotUrls[i], now);
+    }
   });
   tx();
 

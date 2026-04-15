@@ -34,30 +34,32 @@ export interface AddScreenshotOptions {
 
 export type AddScreenshotResult =
   | { ok: true; screenshot: SnapshotScreenshot }
-  | { ok: false; code: "max_reached" | "position_taken" | "draft_not_found" };
+  | { ok: false; code: "max_reached" | "position_taken" | "snapshot_not_found" | "draft_not_found" };
+
+// ─── Generic helpers (accept snapshotId directly) ────────────────────────────
 
 /**
- * Add a screenshot to a draft snapshot belonging to projectId.
+ * Add a screenshot to any snapshot by its ID.
  * Enforces max-3 limit and position 1-3 range.
  */
-export function addScreenshotToDraft(
-  projectId: string,
+export function addScreenshotToSnapshot(
+  snapshotId: string,
   opts: AddScreenshotOptions,
 ): AddScreenshotResult {
   const db = getDb();
 
-  const draft = db
+  const snap = db
     .prepare<[string], { id: string }>(
-      `SELECT id FROM project_snapshots WHERE project_id = ? AND is_draft = 1`,
+      `SELECT id FROM project_snapshots WHERE id = ?`,
     )
-    .get(projectId);
-  if (!draft) return { ok: false, code: "draft_not_found" };
+    .get(snapshotId);
+  if (!snap) return { ok: false, code: "snapshot_not_found" };
 
   const existing = db
     .prepare<[string], ScreenshotRow>(
       `SELECT * FROM snapshot_screenshots WHERE snapshot_id = ? ORDER BY position`,
     )
-    .all(draft.id);
+    .all(snapshotId);
 
   if (existing.length >= 3) return { ok: false, code: "max_reached" };
 
@@ -81,12 +83,121 @@ export function addScreenshotToDraft(
   db.prepare(
     `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, draft.id, pos, opts.url, opts.alt_text ?? "", now);
+  ).run(id, snapshotId, pos, opts.url, opts.alt_text ?? "", now);
 
   const row = db
     .prepare<[string], ScreenshotRow>(`SELECT * FROM snapshot_screenshots WHERE id = ?`)
     .get(id)!;
   return { ok: true, screenshot: mapScreenshot(row) };
+}
+
+export type RemoveScreenshotOnSnapshotResult =
+  | { ok: true }
+  | { ok: false; code: "not_found" | "forbidden" };
+
+/**
+ * Delete a screenshot by id. Verifies it belongs to the given snapshotId.
+ */
+export function removeScreenshotFromSnapshot(
+  screenshotId: string,
+  snapshotId: string,
+): RemoveScreenshotOnSnapshotResult {
+  const db = getDb();
+
+  const row = db
+    .prepare<[string], { id: string; snapshot_id: string }>(
+      `SELECT id, snapshot_id FROM snapshot_screenshots WHERE id = ?`,
+    )
+    .get(screenshotId);
+
+  if (!row) return { ok: false, code: "not_found" };
+  if (row.snapshot_id !== snapshotId) return { ok: false, code: "forbidden" };
+
+  db.prepare(`DELETE FROM snapshot_screenshots WHERE id = ?`).run(screenshotId);
+  return { ok: true };
+}
+
+export type UpdateScreenshotOnSnapshotResult =
+  | { ok: true; screenshot: SnapshotScreenshot }
+  | { ok: false; code: "not_found" | "forbidden" | "position_conflict" };
+
+/**
+ * Update position and/or alt_text for a screenshot on a given snapshotId.
+ * When reordering, uses a sentinel position (99) to avoid UNIQUE constraint
+ * violations during the swap — moves the occupant aside first.
+ */
+export function updateScreenshotOnSnapshot(
+  screenshotId: string,
+  snapshotId: string,
+  fields: { position?: 1 | 2 | 3; alt_text?: string },
+): UpdateScreenshotOnSnapshotResult {
+  const db = getDb();
+
+  const row = db
+    .prepare<[string], ScreenshotRow>(
+      `SELECT * FROM snapshot_screenshots WHERE id = ?`,
+    )
+    .get(screenshotId);
+  if (!row) return { ok: false, code: "not_found" };
+  if (row.snapshot_id !== snapshotId) return { ok: false, code: "forbidden" };
+
+  const run = db.transaction(() => {
+    if (fields.position !== undefined && fields.position !== row.position) {
+      // SQLite enforces UNIQUE(snapshot_id, position) per-row as updates occur,
+      // so a direct two-update swap fails on the first step. Work around by
+      // deleting the occupant row, moving the target, then re-inserting the occupant
+      // at the vacated slot — all within the same transaction.
+      const occupant = db
+        .prepare<[string, number], ScreenshotRow>(
+          `SELECT * FROM snapshot_screenshots WHERE snapshot_id = ? AND position = ?`,
+        )
+        .get(snapshotId, fields.position);
+
+      if (occupant) {
+        db.prepare(`DELETE FROM snapshot_screenshots WHERE id = ?`).run(occupant.id);
+        db.prepare(`UPDATE snapshot_screenshots SET position = ? WHERE id = ?`).run(fields.position, screenshotId);
+        db.prepare(
+          `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(occupant.id, occupant.snapshot_id, row.position, occupant.url, occupant.alt_text, occupant.created_at);
+      } else {
+        db.prepare(`UPDATE snapshot_screenshots SET position = ? WHERE id = ?`).run(fields.position, screenshotId);
+      }
+    }
+    if (fields.alt_text !== undefined) {
+      db.prepare(
+        `UPDATE snapshot_screenshots SET alt_text = ? WHERE id = ?`,
+      ).run(fields.alt_text, screenshotId);
+    }
+  });
+  run();
+
+  const updated = db
+    .prepare<[string], ScreenshotRow>(`SELECT * FROM snapshot_screenshots WHERE id = ?`)
+    .get(screenshotId)!;
+  return { ok: true, screenshot: mapScreenshot(updated) };
+}
+
+// ─── Project-draft-scoped wrappers (legacy API, kept for draft routes) ────────
+
+/**
+ * Add a screenshot to a draft snapshot belonging to projectId.
+ * Enforces max-3 limit and position 1-3 range.
+ */
+export function addScreenshotToDraft(
+  projectId: string,
+  opts: AddScreenshotOptions,
+): AddScreenshotResult {
+  const db = getDb();
+
+  const draft = db
+    .prepare<[string], { id: string }>(
+      `SELECT id FROM project_snapshots WHERE project_id = ? AND is_draft = 1`,
+    )
+    .get(projectId);
+  if (!draft) return { ok: false, code: "draft_not_found" };
+
+  return addScreenshotToSnapshot(draft.id, opts);
 }
 
 export type RemoveScreenshotResult =
@@ -109,17 +220,7 @@ export function removeScreenshot(
     .get(projectId);
   if (!draft) return { ok: false, code: "not_found" };
 
-  const row = db
-    .prepare<[string], { id: string; snapshot_id: string }>(
-      `SELECT id, snapshot_id FROM snapshot_screenshots WHERE id = ?`,
-    )
-    .get(screenshotId);
-
-  if (!row) return { ok: false, code: "not_found" };
-  if (row.snapshot_id !== draft.id) return { ok: false, code: "forbidden" };
-
-  db.prepare(`DELETE FROM snapshot_screenshots WHERE id = ?`).run(screenshotId);
-  return { ok: true };
+  return removeScreenshotFromSnapshot(screenshotId, draft.id);
 }
 
 export type UpdateScreenshotResult =
@@ -144,41 +245,5 @@ export function updateScreenshot(
     .get(projectId);
   if (!draft) return { ok: false, code: "not_found" };
 
-  const row = db
-    .prepare<[string], ScreenshotRow>(
-      `SELECT * FROM snapshot_screenshots WHERE id = ?`,
-    )
-    .get(screenshotId);
-  if (!row) return { ok: false, code: "not_found" };
-  if (row.snapshot_id !== draft.id) return { ok: false, code: "forbidden" };
-
-  const run = db.transaction(() => {
-    if (fields.position !== undefined && fields.position !== row.position) {
-      // Swap occupant of target slot if any.
-      const occupant = db
-        .prepare<[string, number], { id: string }>(
-          `SELECT id FROM snapshot_screenshots WHERE snapshot_id = ? AND position = ?`,
-        )
-        .get(draft.id, fields.position);
-      if (occupant) {
-        db.prepare(
-          `UPDATE snapshot_screenshots SET position = ? WHERE id = ?`,
-        ).run(row.position, occupant.id);
-      }
-      db.prepare(
-        `UPDATE snapshot_screenshots SET position = ? WHERE id = ?`,
-      ).run(fields.position, screenshotId);
-    }
-    if (fields.alt_text !== undefined) {
-      db.prepare(
-        `UPDATE snapshot_screenshots SET alt_text = ? WHERE id = ?`,
-      ).run(fields.alt_text, screenshotId);
-    }
-  });
-  run();
-
-  const updated = db
-    .prepare<[string], ScreenshotRow>(`SELECT * FROM snapshot_screenshots WHERE id = ?`)
-    .get(screenshotId)!;
-  return { ok: true, screenshot: mapScreenshot(updated) };
+  return updateScreenshotOnSnapshot(screenshotId, draft.id, fields);
 }

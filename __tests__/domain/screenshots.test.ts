@@ -1,10 +1,13 @@
 import { describe, test, expect } from "vitest";
 import { setupTestDb, seedUser, seedCreator, seedProject } from "../helpers/db";
-import { createDraft, ensureFirstSnapshot } from "@/lib/domain/snapshots";
+import { createDraft, ensureFirstSnapshot, getLatestPublished } from "@/lib/domain/snapshots";
 import {
   addScreenshotToDraft,
   removeScreenshot,
   updateScreenshot,
+  addScreenshotToSnapshot,
+  removeScreenshotFromSnapshot,
+  updateScreenshotOnSnapshot,
 } from "@/lib/domain/screenshots";
 
 const ctx = setupTestDb();
@@ -273,15 +276,7 @@ describe("updateScreenshot", () => {
     expect(result.screenshot.alt_text).toBe("new alt text");
   });
 
-  test("position swap: when swapping to an occupied slot, occupant's position is swapped — BUG: throws UNIQUE constraint (domain bug)", () => {
-    // DOMAIN BUG DOCUMENTED: updateScreenshot attempts to move the occupant to
-    // the target's old position before moving the target to the new position.
-    // However SQLite enforces UNIQUE(snapshot_id, position) immediately per
-    // statement (not deferred), so setting occupant.position = 1 while
-    // target is still at position 1 causes a UNIQUE constraint violation.
-    // The transaction rolls back. This is a real bug in lib/domain/screenshots.ts.
-    // Fix would require using a temporary sentinel position (e.g. 99) for the
-    // occupant before placing it at the vacated slot.
+  test("position swap: correctly swaps positions between two screenshots", () => {
     const db = ctx.db();
     const user = seedUser(db);
     const creator = seedCreator(db);
@@ -294,21 +289,17 @@ describe("updateScreenshot", () => {
               ('swap-2', ?, 2, 'https://b.com', '', datetime('now'))`,
     ).run(draft.id, draft.id);
 
-    // Current behavior: throws due to UNIQUE constraint in the swap transaction.
-    expect(() => updateScreenshot("swap-1", project.id, { position: 2 })).toThrow(
-      /UNIQUE constraint failed/,
-    );
+    const result = updateScreenshot("swap-1", project.id, { position: 2 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("unreachable");
+    expect(result.screenshot.position).toBe(2);
 
-    // Positions are unchanged (transaction rolled back)
-    const s1 = db.prepare("SELECT position FROM snapshot_screenshots WHERE id = 'swap-1'").get() as { position: number };
+    // Occupant should have moved to position 1.
     const s2 = db.prepare("SELECT position FROM snapshot_screenshots WHERE id = 'swap-2'").get() as { position: number };
-    expect(s1.position).toBe(1);
-    expect(s2.position).toBe(2);
+    expect(s2.position).toBe(1);
   });
 
-  test("position swap is transactional — no duplicate positions after swap (same UNIQUE bug — documents rollback behavior)", () => {
-    // Same root cause as above: the swap throws and rolls back cleanly.
-    // This test documents that the rollback leaves positions intact.
+  test("position swap with 3 screenshots — all positions remain unique after swap", () => {
     const db = ctx.db();
     const user = seedUser(db);
     const creator = seedCreator(db);
@@ -322,12 +313,11 @@ describe("updateScreenshot", () => {
               ('tx-3', ?, 3, 'https://c.com', '', datetime('now'))`,
     ).run(draft.id, draft.id, draft.id);
 
-    // Swapping tx-1 (pos 1) → pos 3 hits the occupant (tx-3); throws and rolls back.
-    expect(() => updateScreenshot("tx-1", project.id, { position: 3 })).toThrow(
-      /UNIQUE constraint failed/,
-    );
+    // Swapping tx-1 (pos 1) → pos 3 moves occupant tx-3 to pos 1.
+    const result = updateScreenshot("tx-1", project.id, { position: 3 });
+    expect(result.ok).toBe(true);
 
-    // After rollback all positions remain exactly as inserted — no corruption.
+    // All positions remain unique — no corruption.
     const rows = db
       .prepare(
         "SELECT id, position FROM snapshot_screenshots WHERE snapshot_id = ? ORDER BY position",
@@ -335,6 +325,11 @@ describe("updateScreenshot", () => {
       .all(draft.id) as Array<{ id: string; position: number }>;
     expect(rows).toHaveLength(3);
     expect(new Set(rows.map((r) => r.position)).size).toBe(3);
+    // tx-1 is now at 3, tx-3 is now at 1, tx-2 stays at 2.
+    const byId = Object.fromEntries(rows.map((r) => [r.id, r.position]));
+    expect(byId["tx-1"]).toBe(3);
+    expect(byId["tx-3"]).toBe(1);
+    expect(byId["tx-2"]).toBe(2);
   });
 
   test("no-op when new position equals current position", () => {
@@ -354,5 +349,182 @@ describe("updateScreenshot", () => {
     if (!result.ok) throw new Error("unreachable");
     expect(result.screenshot.position).toBe(1);
     expect(result.screenshot.alt_text).toBe("original");
+  });
+});
+
+// ─── addScreenshotToSnapshot (generic, published snapshot) ───────────────────
+
+describe("addScreenshotToSnapshot", () => {
+  test("adds screenshot to a published snapshot by snapshotId", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id, owner_user_id: user.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latest.id);
+
+    const result = addScreenshotToSnapshot(latest.id, { url: "https://pub.example.com/1.png" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("unreachable");
+    expect(result.screenshot.snapshot_id).toBe(latest.id);
+    expect(result.screenshot.position).toBe(1);
+    expect(result.screenshot.url).toBe("https://pub.example.com/1.png");
+  });
+
+  test("returns snapshot_not_found for a nonexistent snapshotId", () => {
+    const result = addScreenshotToSnapshot("no-such-snapshot-id", { url: "https://x.com/a.png" });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.code).toBe("snapshot_not_found");
+  });
+
+  test("returns max_reached when 3 screenshots already exist on snapshot", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latest.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('gss1', ?, 1, 'https://a.com', '', datetime('now')),
+              ('gss2', ?, 2, 'https://b.com', '', datetime('now')),
+              ('gss3', ?, 3, 'https://c.com', '', datetime('now'))`,
+    ).run(latest.id, latest.id, latest.id);
+
+    const result = addScreenshotToSnapshot(latest.id, { url: "https://overflow.com" });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.code).toBe("max_reached");
+  });
+});
+
+// ─── removeScreenshotFromSnapshot (generic) ──────────────────────────────────
+
+describe("removeScreenshotFromSnapshot", () => {
+  test("removes a screenshot by id from the given snapshot", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latest.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('rm-pub', ?, 1, 'https://example.com', '', datetime('now'))`,
+    ).run(latest.id);
+
+    const result = removeScreenshotFromSnapshot("rm-pub", latest.id);
+    expect(result.ok).toBe(true);
+
+    const count = (
+      db.prepare("SELECT COUNT(*) as n FROM snapshot_screenshots WHERE id = 'rm-pub'").get() as { n: number }
+    ).n;
+    expect(count).toBe(0);
+  });
+
+  test("returns not_found when screenshot does not exist", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+
+    const result = removeScreenshotFromSnapshot("nonexistent", latest.id);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.code).toBe("not_found");
+  });
+
+  test("returns forbidden when screenshot belongs to a different snapshot", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const projectA = seedProject(db, { creator_id: creator.id });
+    const projectB = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(projectA.id);
+    ensureFirstSnapshot(projectB.id);
+    const latestA = getLatestPublished(projectA.id)!;
+    const latestB = getLatestPublished(projectB.id)!;
+
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latestA.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('ss-in-a-pub', ?, 1, 'https://a.com', '', datetime('now'))`,
+    ).run(latestA.id);
+
+    const result = removeScreenshotFromSnapshot("ss-in-a-pub", latestB.id);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.code).toBe("forbidden");
+  });
+});
+
+// ─── updateScreenshotOnSnapshot (generic, fixes UNIQUE swap bug) ─────────────
+
+describe("updateScreenshotOnSnapshot", () => {
+  test("updates alt_text on a published snapshot screenshot", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latest.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('upd-pub', ?, 1, 'https://example.com', 'old', datetime('now'))`,
+    ).run(latest.id);
+
+    const result = updateScreenshotOnSnapshot("upd-pub", latest.id, { alt_text: "new alt" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("unreachable");
+    expect(result.screenshot.alt_text).toBe("new alt");
+  });
+
+  test("swaps positions correctly using sentinel — no UNIQUE constraint error", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const project = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(project.id);
+    const latest = getLatestPublished(project.id)!;
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latest.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('swap-pub-1', ?, 1, 'https://a.com', '', datetime('now')),
+              ('swap-pub-2', ?, 2, 'https://b.com', '', datetime('now'))`,
+    ).run(latest.id, latest.id);
+
+    // Should NOT throw (the sentinel-based swap fixes the UNIQUE constraint bug).
+    const result = updateScreenshotOnSnapshot("swap-pub-1", latest.id, { position: 2 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("unreachable");
+    expect(result.screenshot.position).toBe(2);
+
+    const s2 = db
+      .prepare("SELECT position FROM snapshot_screenshots WHERE id = 'swap-pub-2'")
+      .get() as { position: number };
+    expect(s2.position).toBe(1);
+  });
+
+  test("returns forbidden when screenshot belongs to a different snapshot", () => {
+    const db = ctx.db();
+    const creator = seedCreator(db);
+    const projectA = seedProject(db, { creator_id: creator.id });
+    const projectB = seedProject(db, { creator_id: creator.id });
+    ensureFirstSnapshot(projectA.id);
+    ensureFirstSnapshot(projectB.id);
+    const latestA = getLatestPublished(projectA.id)!;
+    const latestB = getLatestPublished(projectB.id)!;
+
+    db.prepare("DELETE FROM snapshot_screenshots WHERE snapshot_id = ?").run(latestA.id);
+    db.prepare(
+      `INSERT INTO snapshot_screenshots (id, snapshot_id, position, url, alt_text, created_at)
+       VALUES ('upd-a-pub', ?, 1, 'https://a.com', '', datetime('now'))`,
+    ).run(latestA.id);
+
+    const result = updateScreenshotOnSnapshot("upd-a-pub", latestB.id, { alt_text: "hacked" });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.code).toBe("forbidden");
   });
 });
