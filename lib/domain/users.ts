@@ -145,9 +145,13 @@ export function updateProfile(
   if (patch.display_name !== undefined) {
     const name = patch.display_name.trim();
     if (name.length < 1 || name.length > 50) return null;
-    getDb()
-      .prepare("UPDATE users SET display_name = ? WHERE id = ?")
-      .run(name, userId);
+    const db = getDb();
+    db.prepare("UPDATE users SET display_name = ? WHERE id = ?").run(name, userId);
+    // Write-through to creators row when one exists for this user (legacy
+    // seeded creators whose id matches a user id). The creator profile page
+    // and project author block read from this row and would stay stale
+    // otherwise. No-op when no matching creators row exists.
+    db.prepare("UPDATE creators SET display_name = ? WHERE id = ?").run(name, userId);
   }
   return getUserById(userId);
 }
