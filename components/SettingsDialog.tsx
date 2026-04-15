@@ -124,9 +124,13 @@ export function SettingsDialog({
               minLength={3}
               maxLength={20}
               autoComplete="off"
+              disabled={!!initialHandle}
+              title={initialHandle ? "Handle is permanent and cannot be changed once set" : undefined}
             />
             <p className="text-xs text-muted-foreground">
-              3–20 chars, lowercase letters, numbers, and hyphens.{" "}
+              {initialHandle
+                ? "Handle is permanent — choose carefully when you set it. "
+                : "3–20 chars, lowercase letters, numbers, and hyphens. "}
               {handle.trim() && (
                 <span className="font-mono">
                   /creator/{handle.trim() || "your-handle"}
