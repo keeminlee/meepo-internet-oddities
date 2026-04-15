@@ -44,18 +44,15 @@ export function findOrCreateFromGithub(profile: GithubProfile): User {
   const db = getDb();
   const existing = getUserByGithubId(profile.github_id);
   if (existing) {
-    db.prepare(
-      "UPDATE users SET display_name = ?, avatar_url = ?, email = CASE WHEN ? = '' THEN email ELSE ? END WHERE id = ?",
-    ).run(
-      profile.display_name,
-      profile.avatar_url,
-      profile.email,
-      profile.email,
-      existing.id,
-    );
-    const refreshed = getUserById(existing.id);
-    if (!refreshed) throw new Error("user disappeared mid-update");
-    return refreshed;
+    // Treat display_name + avatar_url as user-owned once the row exists —
+    // never clobber them with the provider's values on re-login. Only
+    // backfill email when ours is empty AND the provider returned one.
+    if (profile.email && !existing.email) {
+      db.prepare("UPDATE users SET email = ? WHERE id = ?").run(profile.email, existing.id);
+      const refreshed = getUserById(existing.id);
+      if (refreshed) return refreshed;
+    }
+    return existing;
   }
 
   const id = `user-${randomUUID().slice(0, 8)}`;
@@ -85,18 +82,15 @@ export function findOrCreateFromGoogle(profile: GoogleProfile): User {
   const db = getDb();
   const existing = getUserByGoogleId(profile.google_id);
   if (existing) {
-    db.prepare(
-      "UPDATE users SET display_name = ?, avatar_url = ?, email = CASE WHEN ? = '' THEN email ELSE ? END WHERE id = ?",
-    ).run(
-      profile.display_name,
-      profile.avatar_url,
-      profile.email,
-      profile.email,
-      existing.id,
-    );
-    const refreshed = getUserById(existing.id);
-    if (!refreshed) throw new Error("user disappeared mid-update");
-    return refreshed;
+    // Treat display_name + avatar_url as user-owned once the row exists —
+    // never clobber them with the provider's values on re-login. Only
+    // backfill email when ours is empty AND the provider returned one.
+    if (profile.email && !existing.email) {
+      db.prepare("UPDATE users SET email = ? WHERE id = ?").run(profile.email, existing.id);
+      const refreshed = getUserById(existing.id);
+      if (refreshed) return refreshed;
+    }
+    return existing;
   }
 
   const id = `user-${randomUUID().slice(0, 8)}`;

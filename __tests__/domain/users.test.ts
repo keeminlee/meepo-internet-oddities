@@ -26,14 +26,17 @@ describe("findOrCreateFromGoogle", () => {
     expect(user.handle).toBeNull();
   });
 
-  test("returning google user: updates profile fields, preserves id", () => {
+  test("returning google user: preserves user-owned display_name + avatar_url, NEVER clobbers from provider", () => {
     ctx.db();
     const first = findOrCreateFromGoogle({
       google_id: "g-42",
       display_name: "Original",
-      avatar_url: "",
+      avatar_url: "https://example.com/original.png",
       email: "o@example.com",
     });
+    // Provider returns a different name + avatar (e.g. user changed them on
+    // Google's side, OR our user customized via Settings). We MUST NOT
+    // overwrite local values — those edits would silently revert on each login.
     const second = findOrCreateFromGoogle({
       google_id: "g-42",
       display_name: "Renamed",
@@ -41,8 +44,27 @@ describe("findOrCreateFromGoogle", () => {
       email: "o@example.com",
     });
     expect(second.id).toBe(first.id);
-    expect(second.display_name).toBe("Renamed");
-    expect(second.avatar_url).toBe("https://example.com/new.png");
+    expect(second.display_name).toBe("Original");
+    expect(second.avatar_url).toBe("https://example.com/original.png");
+  });
+
+  test("returning google user with no email on file: backfills from provider", () => {
+    const db = ctx.db();
+    const first = findOrCreateFromGoogle({
+      google_id: "g-bf",
+      display_name: "Bee",
+      avatar_url: "",
+      email: "",
+    });
+    expect(first.email).toBe("");
+    const second = findOrCreateFromGoogle({
+      google_id: "g-bf",
+      display_name: "Bee",
+      avatar_url: "",
+      email: "bee@example.com",
+    });
+    expect(second.email).toBe("bee@example.com");
+    void db;
   });
 
   test("empty email on re-login preserves existing email (same as github flow)", () => {
