@@ -1,9 +1,11 @@
 import { ProjectStatusBadge } from "@/components/ProjectStatusBadge";
 import { ScreenshotCarousel } from "@/components/ScreenshotCarousel";
 import { TagBadge } from "@/components/TagBadge";
+import { VisitButton } from "@/components/VisitButton";
 import type { ProjectSnapshot, SnapshotScreenshot } from "@/lib/types/snapshot";
 
 interface SnapshotViewProps {
+  slug: string;
   snapshot: ProjectSnapshot & { screenshots: SnapshotScreenshot[] };
 }
 
@@ -15,7 +17,7 @@ function formatDate(iso: string): string {
   });
 }
 
-export function SnapshotView({ snapshot }: SnapshotViewProps) {
+export function SnapshotView({ slug, snapshot }: SnapshotViewProps) {
   const tags: string[] = snapshot.tags ? JSON.parse(snapshot.tags) : [];
 
   return (
@@ -51,16 +53,10 @@ export function SnapshotView({ snapshot }: SnapshotViewProps) {
         </div>
       )}
 
-      {/* Primary URL */}
+      {/* Primary URL — routed through VisitButton so clicks mint meeps and the
+          feedback pill renders. */}
       {snapshot.primary_url && (
-        <a
-          href={snapshot.primary_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Visit project
-        </a>
+        <VisitButton slug={slug} externalUrl={snapshot.primary_url} />
       )}
 
       {/* Screenshot carousel — compact inline, visually distinct from SnapshotNav */}
