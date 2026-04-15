@@ -22,9 +22,14 @@ export const SCHEMA_DDL: string[] = [
     links TEXT NOT NULL DEFAULT '{}'
   )`,
 
+  // Multi-provider auth: at least one of github_id / google_id must be set
+  // (enforced in app code, not SQL). Partial unique indexes below enforce
+  // per-provider uniqueness while allowing NULL for users who signed up
+  // with the other provider.
   `CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    github_id INTEGER UNIQUE NOT NULL,
+    github_id INTEGER,
+    google_id TEXT,
     handle TEXT UNIQUE,
     display_name TEXT NOT NULL,
     avatar_url TEXT NOT NULL DEFAULT '',
@@ -185,5 +190,16 @@ export const COLUMN_ADDITIONS: ColumnAddition[] = [
   // column (which tracks approval state). project_status tracks the creator's
   // self-reported lifecycle stage for their project.
   { table: "projects", column: "project_status", definition: "TEXT NOT NULL DEFAULT 'in progress'" },
+  // Multi-provider auth. google_id is NULL for github-originated users and
+  // vice versa; the partial unique index in POST_MIGRATION_DDL enforces
+  // uniqueness only across non-NULL values.
+  { table: "users", column: "google_id", definition: "TEXT" },
+];
+
+// Runs after COLUMN_ADDITIONS so index creation can reference added columns.
+// Kept idempotent via IF NOT EXISTS.
+export const POST_MIGRATION_DDL: string[] = [
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id) WHERE github_id IS NOT NULL`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL`,
 ];
 

@@ -26,6 +26,13 @@ export function getUserByGithubId(githubId: number): User | null {
   return row ? mapUser(row) : null;
 }
 
+export function getUserByGoogleId(googleId: string): User | null {
+  const row = getDb()
+    .prepare<[string], UserRow>("SELECT * FROM users WHERE google_id = ?")
+    .get(googleId);
+  return row ? mapUser(row) : null;
+}
+
 export interface GithubProfile {
   github_id: number;
   display_name: string;
@@ -57,6 +64,47 @@ export function findOrCreateFromGithub(profile: GithubProfile): User {
   ).run(
     id,
     profile.github_id,
+    profile.display_name,
+    profile.avatar_url,
+    profile.email,
+    new Date().toISOString(),
+  );
+  const created = getUserById(id);
+  if (!created) throw new Error("user creation failed");
+  return created;
+}
+
+export interface GoogleProfile {
+  google_id: string;
+  display_name: string;
+  avatar_url: string;
+  email: string;
+}
+
+export function findOrCreateFromGoogle(profile: GoogleProfile): User {
+  const db = getDb();
+  const existing = getUserByGoogleId(profile.google_id);
+  if (existing) {
+    db.prepare(
+      "UPDATE users SET display_name = ?, avatar_url = ?, email = CASE WHEN ? = '' THEN email ELSE ? END WHERE id = ?",
+    ).run(
+      profile.display_name,
+      profile.avatar_url,
+      profile.email,
+      profile.email,
+      existing.id,
+    );
+    const refreshed = getUserById(existing.id);
+    if (!refreshed) throw new Error("user disappeared mid-update");
+    return refreshed;
+  }
+
+  const id = `user-${randomUUID().slice(0, 8)}`;
+  db.prepare(
+    "INSERT INTO users (id, google_id, handle, display_name, avatar_url, email, created_at) VALUES (?, ?, NULL, ?, ?, ?, ?)",
+  ).run(
+    id,
+    profile.google_id,
     profile.display_name,
     profile.avatar_url,
     profile.email,

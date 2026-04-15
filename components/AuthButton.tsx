@@ -1,6 +1,7 @@
 "use client";
 
 import { Eye, EyeOff, Github, LogOut, Settings } from "lucide-react";
+import { GoogleIcon } from "@/components/GoogleIcon";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -41,11 +42,18 @@ export function AuthButton() {
 
   if (!me.authenticated) {
     return (
-      <Button asChild size="sm" variant="outline">
-        <a href="/api/auth/github">
-          <Github className="h-4 w-4" /> Sign in
-        </a>
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button asChild size="sm" variant="outline">
+          <a href="/api/auth/github" aria-label="Sign in with GitHub">
+            <Github className="h-4 w-4" /> GitHub
+          </a>
+        </Button>
+        <Button asChild size="sm" variant="outline">
+          <a href="/api/auth/google" aria-label="Sign in with Google">
+            <GoogleIcon className="h-4 w-4" /> Google
+          </a>
+        </Button>
+      </div>
     );
   }
 

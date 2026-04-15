@@ -15,7 +15,8 @@ export interface CreatorRow {
 
 export interface UserRow {
   id: string;
-  github_id: number;
+  github_id: number | null;
+  google_id: string | null;
   handle: string | null;
   display_name: string;
   avatar_url: string;
@@ -73,7 +74,8 @@ export interface Creator {
 
 export interface User {
   id: string;
-  github_id: number;
+  github_id: number | null;
+  google_id: string | null;
   handle: string | null;
   display_name: string;
   avatar_url: string;
