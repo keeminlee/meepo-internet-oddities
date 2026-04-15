@@ -117,6 +117,44 @@ export const SCHEMA_DDL: string[] = [
   // Seed the singleton cosmic_state row. Idempotent via INSERT OR IGNORE on
   // the primary key — safe to run on every migrate.
   `INSERT OR IGNORE INTO cosmic_state (id, total_meeps, current_threshold) VALUES (1, 0, '')`,
+
+  // ─── Starstory living project pages (V1) ──────────────────────────
+  // Versioned snapshots of a project's public-facing page. One row per
+  // published (or draft) version; the canonical "current" page is the
+  // latest non-draft row ordered by published_at.
+  `CREATE TABLE IF NOT EXISTS project_snapshots (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    -- Drafts have NULL version_number until publish assigns the next integer.
+    version_number INTEGER,
+    title TEXT,
+    tagline TEXT,
+    description TEXT,
+    primary_url TEXT,
+    secondary_links TEXT,
+    tags TEXT,
+    project_status TEXT,
+    update_title TEXT,
+    update_body TEXT,
+    is_draft INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    published_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT ''
+  )`,
+
+  // Up to 3 ordered screenshots per snapshot. UNIQUE(snapshot_id, position)
+  // enforces the 3-slot invariant at the SQL level.
+  `CREATE TABLE IF NOT EXISTS snapshot_screenshots (
+    id TEXT PRIMARY KEY,
+    snapshot_id TEXT NOT NULL REFERENCES project_snapshots(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL CHECK (position BETWEEN 1 AND 3),
+    url TEXT NOT NULL,
+    alt_text TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE(snapshot_id, position)
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_snapshots_project_published ON project_snapshots(project_id, published_at)`,
 ];
 
 // Column additions applied after SCHEMA_DDL. Each entry adds a column to an
@@ -143,5 +181,9 @@ export const COLUMN_ADDITIONS: ColumnAddition[] = [
   // rows default to 0 (treated as unreviewed, which matches their historical
   // manual-approval behavior).
   { table: "projects", column: "reviewed", definition: "INTEGER NOT NULL DEFAULT 0" },
+  // Starstory living project pages (V1). Separate from the existing `status`
+  // column (which tracks approval state). project_status tracks the creator's
+  // self-reported lifecycle stage for their project.
+  { table: "projects", column: "project_status", definition: "TEXT NOT NULL DEFAULT 'in progress'" },
 ];
 

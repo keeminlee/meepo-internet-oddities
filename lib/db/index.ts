@@ -15,16 +15,22 @@ let cached: Database.Database | null = null;
 
 export function resolveDbPath(): string {
   const raw = process.env.MIO_DB_PATH?.trim();
-  if (raw) return resolve(raw);
+  if (raw) {
+    // Pass SQLite pseudo-paths (":memory:", "file::memory:?cache=shared") through
+    // untouched so tests can run against an in-memory database.
+    if (raw === ":memory:" || raw.startsWith("file:")) return raw;
+    return resolve(raw);
+  }
   return resolve(process.cwd(), "data", "mio.db");
 }
 
 export function getDb(): Database.Database {
   if (cached) return cached;
   const path = resolveDbPath();
-  mkdirSync(dirname(path), { recursive: true });
+  const inMemory = path === ":memory:" || path.startsWith("file:");
+  if (!inMemory) mkdirSync(dirname(path), { recursive: true });
   const db = new Database(path);
-  db.pragma("journal_mode = WAL");
+  if (!inMemory) db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   cached = db;
   return db;

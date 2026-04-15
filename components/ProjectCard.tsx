@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import type { ProjectWithCreator } from "@/lib/domain/types";
 
+import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { StatusBadge } from "./StatusBadge";
 import { TagBadge } from "./TagBadge";
 
@@ -76,9 +77,12 @@ export function ProjectCard({ project }: { project: ProjectWithCreator }) {
         <StatusBadge status={project.status} />
 
         <div>
-          <h3 className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
-            {project.name}
-          </h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
+              {project.name}
+            </h3>
+            <ProjectStatusBadge status={project.project_status} />
+          </div>
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{project.one_line_pitch}</p>
         </div>
 

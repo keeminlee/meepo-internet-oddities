@@ -4,6 +4,15 @@ import { getCreatorById } from "./creators";
 import { getUserById } from "./users";
 import type { Project, ProjectRow, ProjectWithCreator } from "./types";
 import { mapProject, userToCreatorShape } from "./types";
+import type { ProjectStatus } from "@/lib/types/snapshot";
+
+const VALID_PROJECT_STATUSES = new Set<ProjectStatus>([
+  "idea",
+  "in progress",
+  "on ice",
+  "live",
+  "archived",
+]);
 
 function resolveCreator(p: Project): ProjectWithCreator {
   let creator = getCreatorById(p.creator_id);
@@ -44,7 +53,7 @@ export function getMostLoved(count = 30): ProjectWithCreator[] {
   const rows = getDb()
     .prepare<[number], ProjectRow>(
       `SELECT * FROM projects
-       WHERE approved = 1 AND is_demo = 0
+       WHERE approved = 1 AND is_demo = 0 AND (project_status IS NULL OR project_status != 'archived')
        ORDER BY meep_count DESC, created_at DESC
        LIMIT ?`,
     )
@@ -56,7 +65,7 @@ export function getNewest(count = 6): ProjectWithCreator[] {
   const rows = getDb()
     .prepare<[number], ProjectRow>(
       `SELECT * FROM projects
-       WHERE approved = 1 AND is_demo = 0
+       WHERE approved = 1 AND is_demo = 0 AND (project_status IS NULL OR project_status != 'archived')
        ORDER BY created_at DESC
        LIMIT ?`,
     )
@@ -117,6 +126,7 @@ export interface ProjectPatch {
   screenshot_url?: string;
   why_i_made_this?: string;
   tags?: string[];
+  project_status?: string;
 }
 
 export type UpdateResult =
@@ -146,6 +156,7 @@ export function updateProject(
   let screenshot_url = current.screenshot_url;
   let why_i_made_this = current.why_i_made_this;
   let tags = current.tags;
+  let project_status = current.project_status;
 
   if (patch.name !== undefined) {
     name = patch.name.trim();
@@ -170,6 +181,12 @@ export function updateProject(
       return { ok: false, error: "meepo_tag_forbidden", status: 403 };
     }
   }
+  if (patch.project_status !== undefined) {
+    if (!VALID_PROJECT_STATUSES.has(patch.project_status as ProjectStatus)) {
+      return { ok: false, error: "invalid_project_status", status: 400 };
+    }
+    project_status = patch.project_status as ProjectStatus;
+  }
 
   if (!external_url) return { ok: false, error: "url_required", status: 400 };
   if (!screenshot_url)
@@ -183,6 +200,7 @@ export function updateProject(
     `UPDATE projects SET
       name = ?, one_line_pitch = ?, external_url = ?, repo_url = ?, screenshot_url = ?,
       why_i_made_this = ?, tags = ?, source_type = 'both', updated_at = ?,
+      project_status = ?,
       rejected = CASE WHEN ? = 1 THEN 0 ELSE rejected END,
       rejection_reason = CASE WHEN ? = 1 THEN '' ELSE rejection_reason END,
       rejected_at = CASE WHEN ? = 1 THEN '' ELSE rejected_at END,
@@ -198,6 +216,7 @@ export function updateProject(
     why_i_made_this,
     JSON.stringify(tags),
     updated_at,
+    project_status,
     resetRejection,
     resetRejection,
     resetRejection,

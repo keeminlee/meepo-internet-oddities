@@ -25,7 +25,7 @@ export function MeepField({ count, className }: Props) {
     let height = 0;
     let dpr = window.devicePixelRatio || 1;
 
-    type Dot = { x: number; y: number; vx: number; vy: number; a: number };
+    type Dot = { x: number; y: number; vx: number; vy: number; a: number; r: number };
     const dots: Dot[] = [];
 
     const seed = () => {
@@ -42,6 +42,7 @@ export function MeepField({ count, className }: Props) {
           vx: (Math.random() - 0.5) * 0.25,
           vy: (Math.random() - 0.5) * 0.25,
           a: 0.35 + Math.random() * 0.45,
+          r: 0.7 + Math.random() * 0.9,
         });
       }
     };
@@ -100,7 +101,9 @@ export function MeepField({ count, className }: Props) {
         d.y += d.vy;
 
         ctx.fillStyle = `rgba(${BASE_COLOR}, ${d.a})`;
-        ctx.fillRect(d.x, d.y, 1.25, 1.25);
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       raf = requestAnimationFrame(tick);

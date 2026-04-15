@@ -17,10 +17,10 @@ export function getOAuthConfig(): GithubOAuthConfig {
       process.env.GITHUB_CALLBACK_URL?.trim() ||
       (process.env.NODE_ENV === "production"
         ? "https://meepo.online/api/auth/github/callback"
-        : "http://localhost:3000/api/auth/github/callback"),
+        : "http://localhost:3001/api/auth/github/callback"),
     frontendUrl:
       process.env.FRONTEND_URL?.trim() ||
-      (process.env.NODE_ENV === "production" ? "https://meepo.online" : "http://localhost:3000"),
+      (process.env.NODE_ENV === "production" ? "https://meepo.online" : "http://localhost:3001"),
     sessionSecret: process.env.SESSION_SECRET ?? "dev-secret-change-me",
   };
 }

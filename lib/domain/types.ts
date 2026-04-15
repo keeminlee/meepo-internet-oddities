@@ -1,6 +1,8 @@
 // Row shapes (as SQLite returns them) + mappers to app-facing shapes.
 // Booleans are INTEGER 0/1 in SQLite; tags/links are JSON TEXT.
 
+import type { ProjectStatus } from "@/lib/types/snapshot";
+
 export interface CreatorRow {
   id: string;
   handle: string;
@@ -53,6 +55,7 @@ export interface ProjectRow {
   rejection_reason: string;
   rejected_at: string;
   rejected_by: string;
+  project_status: string;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +96,7 @@ export interface Project {
   tags: string[];
   source_type: string;
   status: string;
+  project_status: ProjectStatus;
   clicks_sent: number;
   meep_count: number;
   about: string;
@@ -144,6 +148,7 @@ export function mapProject(row: ProjectRow): Project {
     tags: parseJsonArray(row.tags),
     source_type: row.source_type,
     status: row.status,
+    project_status: (row.project_status as ProjectStatus) ?? "in progress",
     clicks_sent: row.clicks_sent,
     meep_count: row.meep_count ?? 0,
     about: row.about,

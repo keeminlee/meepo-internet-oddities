@@ -3,35 +3,45 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DraftControl } from "@/components/DraftControl";
 import { ProjectEditor } from "@/components/ProjectEditor";
+import { SnapshotPageClient } from "@/components/SnapshotPageClient";
 import { StatusBadge } from "@/components/StatusBadge";
-import { TagBadge } from "@/components/TagBadge";
 import { VisitButton } from "@/components/VisitButton";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
 import { getProjectBySlug, getProjectBySlugIncludingUnapproved } from "@/lib/domain/projects";
 import { getUserFromSession } from "@/lib/domain/sessions";
+import {
+  ensureFirstSnapshot,
+  getSnapshot,
+  getSnapshots,
+  getLatestPublished,
+} from "@/lib/domain/snapshots";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ v?: string }>;
 }
 
-export default async function ProjectDetailPage({ params }: Props) {
+export default async function ProjectDetailPage({ params, searchParams }: Props) {
   ensureBootstrapped();
   const { slug } = await params;
+  const { v } = await searchParams;
+
+  // Auth: read session once for both owner checks.
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
+  const viewer = token ? getUserFromSession(token) : null;
 
   // Try approved first, then fall back to unapproved for the owner
   let project = getProjectBySlug(slug);
   let isOwnerViewingRejected = false;
 
   if (!project) {
-    // Check if the current user owns this (possibly rejected/pending) project
-    const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
-    const viewer = token ? getUserFromSession(token) : null;
     if (viewer) {
       const full = getProjectBySlugIncludingUnapproved(slug);
       if (full && full.owner_user_id === viewer.id) {
@@ -45,6 +55,41 @@ export default async function ProjectDetailPage({ params }: Props) {
 
   const creatorName = project.creator?.display_name ?? "Unknown";
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
+
+  // Snapshot setup: ensure at least v1 exists (migration-on-read)
+  ensureFirstSnapshot(project.id);
+
+  const publishedSnapshots = getSnapshots(project.id);
+
+  // Determine which version to show
+  let snapshot: (typeof publishedSnapshots[0] & { screenshots: import("@/lib/types/snapshot").SnapshotScreenshot[] }) | null = null;
+
+  if (publishedSnapshots.length > 0) {
+    const requestedVersion = v ? parseInt(v, 10) : null;
+
+    if (requestedVersion && !isNaN(requestedVersion)) {
+      snapshot = getSnapshot(project.id, requestedVersion);
+    }
+
+    // Fall back to latest published
+    if (!snapshot) {
+      const latest = getLatestPublished(project.id);
+      if (latest) {
+        snapshot = getSnapshot(project.id, latest.version_number);
+      }
+    }
+  }
+
+  const totalVersions = publishedSnapshots.length;
+
+  // Owner + latest-snapshot detection for DraftControl.
+  const isOwner = !!viewer && viewer.id === project.owner_user_id;
+  const latestPublished = publishedSnapshots.length > 0 ? publishedSnapshots[0] : null;
+  const isViewingLatest =
+    isOwner &&
+    !!snapshot &&
+    !!latestPublished &&
+    snapshot.version_number === latestPublished.version_number;
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,76 +138,73 @@ export default async function ProjectDetailPage({ params }: Props) {
           </div>
         )}
 
-        {project.screenshot_url && (
-          <div className="overflow-hidden rounded-xl border border-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* Approval / review badges (non-snapshot) */}
+        <div className="flex flex-wrap items-center gap-3">
+          <StatusBadge status={project.status} />
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <MousePointerClick className="h-4 w-4" />
+            <span className="font-semibold">{(project.clicks_sent || 0).toLocaleString()}</span> clicks sent
+          </div>
+        </div>
+
+        {/* Creator info block (non-snapshot) */}
+        <div className="flex items-center gap-3">
+          {project.creator?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={project.screenshot_url}
-              alt={project.name}
-              className="w-full object-cover"
-              style={{ maxHeight: "480px" }}
+              src={project.creator.avatar_url}
+              alt={creatorName}
+              className="h-10 w-10 rounded-full"
             />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+              {creatorName.charAt(0)}
+            </div>
+          )}
+          <div>
+            <div className="font-medium">
+              {creatorName}
+              {creatorHandle && (
+                <span className="ml-1 text-sm text-muted-foreground">{creatorHandle}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Snapshot content — or fallback to legacy links if no snapshots */}
+        {isViewingLatest && <DraftControl slug={slug} />}
+        {snapshot ? (
+          <SnapshotPageClient
+            slug={slug}
+            snapshot={snapshot}
+            totalVersions={totalVersions}
+          />
+        ) : (
+          /* Fallback: no snapshots (edge case after ensureFirstSnapshot) */
+          <div className="space-y-4">
+            <h1 className="font-display text-4xl font-bold md:text-5xl">{project.name}</h1>
+            <p className="text-xl text-muted-foreground">{project.one_line_pitch}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              {project.external_url && (
+                <VisitButton slug={project.slug} externalUrl={project.external_url} />
+              )}
+              {project.repo_url && (
+                <a
+                  href={project.repo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
+                >
+                  <Github className="h-4 w-4" />
+                  View source
+                </a>
+              )}
+            </div>
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge status={project.status} />
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <MousePointerClick className="h-4 w-4" />
-              <span className="font-semibold">{(project.clicks_sent || 0).toLocaleString()}</span> clicks sent
-            </div>
-          </div>
-
-          <h1 className="font-display text-4xl font-bold md:text-5xl">{project.name}</h1>
-          <p className="text-xl text-muted-foreground">{project.one_line_pitch}</p>
-
-          <div className="flex items-center gap-3">
-            {project.creator?.avatar_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={project.creator.avatar_url}
-                alt={creatorName}
-                className="h-10 w-10 rounded-full"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
-                {creatorName.charAt(0)}
-              </div>
-            )}
-            <div>
-              <div className="font-medium">
-                {creatorName}
-                {creatorHandle && (
-                  <span className="ml-1 text-sm text-muted-foreground">{creatorHandle}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {project.tags.map((tag) => (
-              <TagBadge key={tag} tag={tag} size="md" />
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {project.external_url && (
-              <VisitButton slug={project.slug} externalUrl={project.external_url} />
-            )}
-            {project.repo_url && (
-              <a
-                href={project.repo_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-colors hover:bg-muted"
-              >
-                <Github className="h-4 w-4" />
-                View source
-              </a>
-            )}
-          </div>
-
+        {/* Editor (non-snapshot, owner-only via ProjectEditor's own auth check) */}
+        <div className="border-t border-border pt-8">
           <ProjectEditor
             project={{
               slug: project.slug,
@@ -177,24 +219,16 @@ export default async function ProjectDetailPage({ params }: Props) {
           />
         </div>
 
-        <div className="space-y-8 border-t border-border pt-8">
-          {project.about && (
-            <div className="space-y-2">
-              <h2 className="font-display text-xl font-bold">Artifact note</h2>
-              <p className="text-muted-foreground leading-relaxed">{project.about}</p>
-            </div>
-          )}
-
-          {project.why_i_made_this && (
-            <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
-              <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
-              <p className="text-muted-foreground leading-relaxed italic">
-                &ldquo;{project.why_i_made_this}&rdquo;
-              </p>
-              <p className="text-sm font-medium">— {creatorName}</p>
-            </div>
-          )}
-        </div>
+        {/* Legacy maker note (non-snapshot) */}
+        {project.why_i_made_this && (
+          <div className="space-y-2 rounded-xl bg-secondary/50 p-6 border border-border">
+            <h2 className="font-display text-xl font-bold">Why I made this (maker note)</h2>
+            <p className="text-muted-foreground leading-relaxed italic">
+              &ldquo;{project.why_i_made_this}&rdquo;
+            </p>
+            <p className="text-sm font-medium">— {creatorName}</p>
+          </div>
+        )}
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
