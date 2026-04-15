@@ -125,7 +125,8 @@ export const SCHEMA_DDL: string[] = [
   `CREATE TABLE IF NOT EXISTS project_snapshots (
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    version_number INTEGER NOT NULL,
+    -- Drafts have NULL version_number until publish assigns the next integer.
+    version_number INTEGER,
     title TEXT,
     tagline TEXT,
     description TEXT,
