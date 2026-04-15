@@ -349,52 +349,137 @@ describe("getNewest", () => {
 
 // ─── getMostLoved ─────────────────────────────────────────────────────────────
 
-describe("getMostLoved", () => {
-  test("excludes archived projects", () => {
+describe("getMostLoved (per-viewer)", () => {
+  function seedClicks(
+    db: ReturnType<typeof ctx.db>,
+    userId: string,
+    projectId: string,
+    days: string[],
+  ): void {
+    for (const day of days) {
+      db.prepare(
+        "INSERT INTO clicks (id, user_id, project_id, clicked_at) VALUES (?, ?, ?, ?)",
+      ).run(`${userId}-${projectId}-${day}`, userId, projectId, day);
+    }
+  }
+
+  test("null userId → empty (anonymous viewers see no list)", () => {
     const db = ctx.db();
     const creator = seedCreator(db);
-    const archivedProject = seedProject(db, {
-      creator_id: creator.id,
-      approved: 1,
-      is_demo: 0,
-      project_status: "archived",
-      meep_count: 999,
-    });
-    const liveProject = seedProject(db, {
-      creator_id: creator.id,
-      approved: 1,
-      is_demo: 0,
-      project_status: "live",
-      meep_count: 1,
-    });
-
-    const results = getMostLoved(10);
-    const ids = results.map((p) => p.id);
-    expect(ids).not.toContain(archivedProject.id);
-    expect(ids).toContain(liveProject.id);
-  });
-
-  test("orders by meep_count descending", () => {
-    const db = ctx.db();
-    const creator = seedCreator(db);
-    const low = seedProject(db, {
-      creator_id: creator.id,
-      approved: 1,
-      is_demo: 0,
-      project_status: "live",
-      meep_count: 5,
-    });
-    const high = seedProject(db, {
+    seedProject(db, {
       creator_id: creator.id,
       approved: 1,
       is_demo: 0,
       project_status: "live",
       meep_count: 100,
     });
+    expect(getMostLoved(null, 10)).toEqual([]);
+  });
 
-    const results = getMostLoved(10);
+  test("user with no clicks → empty", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    seedProject(db, {
+      creator_id: creator.id,
+      approved: 1,
+      is_demo: 0,
+      project_status: "live",
+      meep_count: 100, // global count high, but viewer contributed nothing
+    });
+    expect(getMostLoved(user.id, 10)).toEqual([]);
+  });
+
+  test("ordered by viewer's contribution count, not global meep_count", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    const lessContributed = seedProject(db, {
+      creator_id: creator.id,
+      approved: 1,
+      project_status: "live",
+      meep_count: 999, // globally high, but viewer only sent 1 meep
+    });
+    const moreContributed = seedProject(db, {
+      creator_id: creator.id,
+      approved: 1,
+      project_status: "live",
+      meep_count: 2, // globally low, but viewer sent 3 meeps
+    });
+    seedClicks(db, user.id, lessContributed.id, ["2026-01-01"]);
+    seedClicks(db, user.id, moreContributed.id, ["2026-01-01", "2026-01-02", "2026-01-03"]);
+
+    const results = getMostLoved(user.id, 10);
     const ids = results.map((p) => p.id);
-    expect(ids.indexOf(high.id)).toBeLessThan(ids.indexOf(low.id));
+    expect(ids.indexOf(moreContributed.id)).toBeLessThan(ids.indexOf(lessContributed.id));
+  });
+
+  test("only the viewer's contributions count — other users' clicks ignored", () => {
+    const db = ctx.db();
+    const viewer = seedUser(db);
+    const otherUser = seedUser(db);
+    const creator = seedCreator(db);
+    const projectA = seedProject(db, { creator_id: creator.id, approved: 1, project_status: "live" });
+    const projectB = seedProject(db, { creator_id: creator.id, approved: 1, project_status: "live" });
+    // otherUser floods projectA with clicks; viewer only clicks projectB.
+    seedClicks(db, otherUser.id, projectA.id, ["2026-01-01", "2026-01-02", "2026-01-03"]);
+    seedClicks(db, viewer.id, projectB.id, ["2026-01-01"]);
+
+    const results = getMostLoved(viewer.id, 10);
+    const ids = results.map((p) => p.id);
+    expect(ids).toContain(projectB.id);
+    expect(ids).not.toContain(projectA.id);
+  });
+
+  test("excludes archived projects even when viewer has contributed", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    const archived = seedProject(db, {
+      creator_id: creator.id,
+      approved: 1,
+      project_status: "archived",
+    });
+    const live = seedProject(db, {
+      creator_id: creator.id,
+      approved: 1,
+      project_status: "live",
+    });
+    seedClicks(db, user.id, archived.id, ["2026-01-01", "2026-01-02"]);
+    seedClicks(db, user.id, live.id, ["2026-01-01"]);
+
+    const results = getMostLoved(user.id, 10);
+    const ids = results.map((p) => p.id);
+    expect(ids).not.toContain(archived.id);
+    expect(ids).toContain(live.id);
+  });
+
+  test("excludes unapproved / demo projects", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    const unapproved = seedProject(db, { creator_id: creator.id, approved: 0, project_status: "live" });
+    const demo = seedProject(db, { creator_id: creator.id, approved: 1, is_demo: 1, project_status: "live" });
+    const ok = seedProject(db, { creator_id: creator.id, approved: 1, project_status: "live" });
+    seedClicks(db, user.id, unapproved.id, ["2026-01-01"]);
+    seedClicks(db, user.id, demo.id, ["2026-01-01"]);
+    seedClicks(db, user.id, ok.id, ["2026-01-01"]);
+
+    const ids = getMostLoved(user.id, 10).map((p) => p.id);
+    expect(ids).not.toContain(unapproved.id);
+    expect(ids).not.toContain(demo.id);
+    expect(ids).toContain(ok.id);
+  });
+
+  test("respects LIMIT", () => {
+    const db = ctx.db();
+    const user = seedUser(db);
+    const creator = seedCreator(db);
+    for (let i = 0; i < 5; i++) {
+      const p = seedProject(db, { creator_id: creator.id, approved: 1, project_status: "live" });
+      seedClicks(db, user.id, p.id, ["2026-01-01"]);
+    }
+    expect(getMostLoved(user.id, 3)).toHaveLength(3);
   });
 });
 
@@ -462,3 +547,4 @@ describe("getProjectBySlugIncludingUnapproved", () => {
     expect(result!.rejected).toBe(true);
   });
 });
+

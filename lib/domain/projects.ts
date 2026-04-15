@@ -49,15 +49,29 @@ export function getFeatured(): ProjectWithCreator[] {
   return rows.map(mapProject).map(resolveCreator);
 }
 
-export function getMostLoved(count = 30): ProjectWithCreator[] {
+/**
+ * "Most loved" is a per-viewer list: projects the viewer has sent the most
+ * meeps to, ordered by their personal contribution desc. Anonymous viewers
+ * (userId === null) see an empty list by design — the sort is meaningless
+ * without a user context.
+ */
+export function getMostLoved(userId: string | null, count = 30): ProjectWithCreator[] {
+  if (!userId) return [];
   const rows = getDb()
-    .prepare<[number], ProjectRow>(
-      `SELECT * FROM projects
-       WHERE approved = 1 AND is_demo = 0 AND (project_status IS NULL OR project_status != 'archived')
-       ORDER BY meep_count DESC, created_at DESC
+    .prepare<[string, number], ProjectRow>(
+      `SELECT p.* FROM projects p
+       INNER JOIN (
+         SELECT project_id, COUNT(*) AS n
+         FROM clicks
+         WHERE user_id = ?
+         GROUP BY project_id
+       ) c ON c.project_id = p.id
+       WHERE p.approved = 1 AND p.is_demo = 0
+         AND (p.project_status IS NULL OR p.project_status != 'archived')
+       ORDER BY c.n DESC, p.created_at DESC
        LIMIT ?`,
     )
-    .all(count);
+    .all(userId, count);
   return rows.map(mapProject).map(resolveCreator);
 }
 

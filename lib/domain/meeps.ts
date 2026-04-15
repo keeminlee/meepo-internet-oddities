@@ -134,6 +134,79 @@ export function getMeepBalance(userId: string): number {
   return row?.meep_balance ?? 0;
 }
 
+// ─── Eligibility ─────────────────────────────────────────────────────────────
+//
+// Mirrors the eligibility gate inside `countedClick` for UI consumers (e.g.
+// the homepage project-card glow). A project is eligible for a meep from the
+// viewer iff:
+//   1. the viewer is authenticated (context is non-null),
+//   2. the viewer has clicks remaining today (daily cap not reached),
+//   3. the project is not self-owned,
+//   4. the viewer hasn't already minted a meep for this project today.
+//
+// Keep this predicate in lockstep with `countedClick` — if a new gate is
+// added to the mint path, update `isProjectEligibleForMeep` too.
+
+export interface ViewerEligibilityContext {
+  viewerUserId: string;
+  /** Distinct project ids the viewer has already minted a meep for today. */
+  clickedTodayProjectIds: string[];
+  /** True when the viewer has hit DAILY_CLICK_CAP distinct projects today. */
+  dailyCapReached: boolean;
+}
+
+export function getViewerEligibilityContext(
+  userId: string,
+  today?: string,
+): ViewerEligibilityContext {
+  const day = today ?? new Date().toISOString().slice(0, 10);
+  const rows = getDb()
+    .prepare<[string, string], { project_id: string }>(
+      "SELECT DISTINCT project_id FROM clicks WHERE user_id = ? AND clicked_at = ?",
+    )
+    .all(userId, day);
+  const clickedToday = rows.map((r) => r.project_id);
+  return {
+    viewerUserId: userId,
+    clickedTodayProjectIds: clickedToday,
+    dailyCapReached: clickedToday.length >= DAILY_CLICK_CAP,
+  };
+}
+
+export function isProjectEligibleForMeep(
+  project: { id: string; owner_user_id: string | null },
+  context: ViewerEligibilityContext | null,
+): boolean {
+  if (!context) return false;
+  if (context.dailyCapReached) return false;
+  if (project.owner_user_id && project.owner_user_id === context.viewerUserId) return false;
+  if (context.clickedTodayProjectIds.includes(project.id)) return false;
+  return true;
+}
+
+/** Returns the subset of ids from `projects` that are eligible for the viewer. */
+export function filterEligibleProjectIds(
+  context: ViewerEligibilityContext | null,
+  projects: ReadonlyArray<{ id: string; owner_user_id: string | null }>,
+): string[] {
+  return projects.filter((p) => isProjectEligibleForMeep(p, context)).map((p) => p.id);
+}
+
+/**
+ * Returns distinct project_ids the user has clicked on the given calendar day
+ * (defaults to UTC today). Used by the homepage to filter visited projects
+ * out of the Newest tab.
+ */
+export function getVisitedToday(userId: string, today?: string): string[] {
+  const day = today ?? new Date().toISOString().slice(0, 10);
+  const rows = getDb()
+    .prepare<[string, string], { project_id: string }>(
+      "SELECT DISTINCT project_id FROM clicks WHERE user_id = ? AND clicked_at = ?",
+    )
+    .all(userId, day);
+  return rows.map((r) => r.project_id);
+}
+
 export function dailyRemaining(userId: string, today?: string): number {
   const day = today ?? new Date().toISOString().slice(0, 10);
   const row = getDb()

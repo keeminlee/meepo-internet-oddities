@@ -12,7 +12,7 @@ const MEEP_FIELD_CAP = 2000;
 
 export const dynamic = "force-dynamic";
 
-export default function ObservatoryPage() {
+export default function UniversePage() {
   ensureBootstrapped();
   const cosmic = getCosmicState();
   const thresholds = listThresholds();
@@ -24,7 +24,7 @@ export default function ObservatoryPage() {
           <Link href="/" className="font-display text-xl font-bold tracking-tight">
             {BRAND.name} <span className="text-primary">·</span>
           </Link>
-          <span className="text-sm text-muted-foreground">Observatory</span>
+          <span className="text-sm text-muted-foreground">Universe</span>
         </div>
       </header>
 
@@ -108,7 +108,7 @@ export default function ObservatoryPage() {
 
         {thresholds.length === 0 && (
           <section className="text-center text-muted-foreground">
-            <p>No milestones set yet. The observatory is empty.</p>
+            <p>No milestones set yet. The universe is empty.</p>
           </section>
         )}
 
@@ -117,7 +117,7 @@ export default function ObservatoryPage() {
             href="/"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            ← Back to the observatory
+            ← Back to the universe
           </Link>
         </div>
       </main>

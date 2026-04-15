@@ -17,7 +17,7 @@ interface CosmicSnapshot {
 
 /**
  * Special pinned card for Meepo itself. Visually distinct from ProjectCard.
- * Routes to /observatory instead of an external link.
+ * Routes to /universe instead of an external link.
  * NOT part of the meep economy — clicking this does NOT trigger counted clicks.
  */
 export function MeepoCard() {
@@ -45,14 +45,14 @@ export function MeepoCard() {
 
   return (
     <Link
-      href="/observatory"
+      href="/universe"
       className="group block h-full overflow-hidden rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 via-card to-primary/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/50"
     >
       <div className="relative overflow-hidden aspect-[3/1] flex items-center justify-center bg-gradient-to-br from-primary/10 to-transparent">
         <div className="text-center space-y-1">
           <Sparkles className="h-8 w-8 text-primary mx-auto opacity-80" />
           <p className="text-xs font-medium uppercase tracking-widest text-primary/70">
-            Observatory
+            Universe
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export function MeepoCard() {
       <div className="flex flex-col flex-1 space-y-3 p-4">
         <div>
           <h3 className="font-display text-lg font-bold leading-tight transition-colors group-hover:text-primary">
-            Meepo
+            Meepo is growing...
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Every click on a distinct project feeds the universal total.

@@ -12,8 +12,16 @@ interface QuestData {
   handle: string | null;
 }
 
+/**
+ * Mirrors MeepoCard's load-with-fallbacks pattern: renders immediately with
+ * placeholder values, then hydrates when /api/me/quest responds. Gating on
+ * authentication + balance happens at the homepage level — this component
+ * assumes it should render.
+ */
 export function DailyQuestCard() {
   const [data, setData] = useState<QuestData | null>(null);
+  // Animate progress bar from 0 to target on first render with used > 0.
+  const [displayPct, setDisplayPct] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,16 +40,24 @@ export function DailyQuestCard() {
     };
   }, []);
 
-  // Don't render for anonymous users
-  if (!data || !data.authenticated) return null;
+  const cap = data?.cap ?? 10;
+  const used = data?.used ?? 0;
+  const pct = Math.round((used / cap) * 100);
+  const complete = used >= cap;
 
-  const pct = Math.round((data.used / data.cap) * 100);
-  const complete = data.used >= data.cap;
-  const href = data.handle ? `/creator/${data.handle}` : "#";
+  // On first data load with used > 0, animate bar from 0 → target.
+  useEffect(() => {
+    if (data === null) return;
+    // Use a short delay so the initial 0-width paint is committed first.
+    const t = setTimeout(() => setDisplayPct(pct), 50);
+    return () => clearTimeout(t);
+  }, [data, pct]);
 
   return (
+    // Mirrors the hero's "Explore the universe" CTA: scrolls the viewport
+    // to the discover project grid where clicks actually earn meeps.
     <Link
-      href={href}
+      href="#projects"
       className="group block h-full overflow-hidden rounded-xl border-2 border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-card to-emerald-500/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-emerald-500/10 hover:border-emerald-500/50"
     >
       <div className="relative overflow-hidden aspect-[3/1] flex items-center justify-center bg-gradient-to-br from-emerald-500/10 to-transparent">
@@ -60,7 +76,7 @@ export function DailyQuestCard() {
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {complete
-              ? "You've used all 10 clicks today. Come back tomorrow!"
+              ? `You've used all ${cap} clicks today. Come back tomorrow!`
               : "Click on distinct projects to earn meeps. Resets daily."}
           </p>
         </div>
@@ -69,16 +85,16 @@ export function DailyQuestCard() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
             <span className="font-medium text-foreground tabular-nums text-sm">
-              {data.used}/{data.cap}
+              {used}/{cap}
             </span>
             <span>meeps earned</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
+              className={`h-full rounded-full transition-all duration-[1500ms] ease-in-out ${
                 complete ? "bg-emerald-500" : "bg-emerald-500/70"
               }`}
-              style={{ width: `${pct}%` }}
+              style={{ width: `${displayPct}%` }}
             />
           </div>
         </div>

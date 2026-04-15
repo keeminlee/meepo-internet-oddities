@@ -39,7 +39,7 @@ Each project should have a compact identity surface separate from screenshots:
 
 ### 3) Discovery model (hybrid)
 Homepage should evolve into:
-- **Top layer:** observatory / constellation "sky view" for serendipitous discovery
+- **Top layer:** universe / constellation "sky view" for serendipitous discovery
 - **Bottom layer:** grounded browse + filters + cards for practical navigation
 
 ### 4) Social mechanics (intentionally light)
@@ -59,7 +59,7 @@ MVP should focus on taste and discovery, not heavy social complexity:
 ### Later
 - Dedicated creator profile pages
 - Project avatars/sigils generated or uploaded
-- Observatory layer with constellations + tastemaker curation
+- Universe layer with constellations + tastemaker curation
 - Lightweight social graph mechanics
 
 ## Project status

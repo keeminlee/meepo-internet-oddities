@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { fail, notFound, ok } from "@/lib/api/response";
 import { currentUser } from "@/lib/auth/session";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
+import { getDb } from "@/lib/db";
 import { countedClick, dailyRemaining } from "@/lib/domain/meeps";
 import { trackClick } from "@/lib/domain/projects";
 
@@ -38,14 +39,39 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
         daily_remaining: outcome.daily_remaining,
         user_meep_balance: outcome.user_meep_balance,
       });
-    case "minted":
+    case "minted": {
+      // Fetch project name, slug, and author handle for the onboarding mint context.
+      const mintMeta = getDb()
+        .prepare<[string], { name: string; slug: string; creator_id: string }>(
+          "SELECT p.name, p.slug, p.creator_id FROM projects p WHERE p.slug = ?",
+        )
+        .get(slug);
+      const creatorHandle = mintMeta
+        ? (
+            getDb()
+              .prepare<[string], { handle: string | null }>(
+                "SELECT handle FROM creators WHERE id = ?",
+              )
+              .get(mintMeta.creator_id)?.handle ??
+            getDb()
+              .prepare<[string], { handle: string | null }>(
+                "SELECT handle FROM users WHERE id = ?",
+              )
+              .get(mintMeta.creator_id)?.handle ??
+            null
+          )
+        : null;
       return ok({
         clicks_sent: outcome.clicks_sent,
         external_url: outcome.external_url,
         meeps_minted: true,
         daily_remaining: outcome.daily_remaining,
         user_meep_balance: outcome.user_meep_balance,
+        project_name: mintMeta?.name ?? null,
+        project_slug: mintMeta?.slug ?? null,
+        author_handle: creatorHandle,
       });
+    }
     default: {
       // Exhaustive check
       const _never: never = outcome;

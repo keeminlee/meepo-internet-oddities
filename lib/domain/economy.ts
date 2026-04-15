@@ -2,7 +2,7 @@
 // can depend on these values without dragging better-sqlite3 into the browser
 // bundle. The domain layer re-exports them for ergonomics.
 
-export const DAILY_CLICK_CAP = 10;
+export const DAILY_CLICK_CAP = 5;
 
 // A counted click mints 1 meep to the clicker and 1 to the project; both flow
 // into cosmic_state.total_meeps, so each click adds 2 to the universe counter.
