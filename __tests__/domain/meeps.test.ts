@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, test, expect } from "vitest";
 import { setupTestDb, seedUser, seedCreator, seedProject } from "../helpers/db";
-import { countedClick, dailyRemaining, DAILY_CLICK_CAP } from "@/lib/domain/meeps";
+import { countedClick, dailyRemaining, getMeepBalance, DAILY_CLICK_CAP } from "@/lib/domain/meeps";
 
 const ctx = setupTestDb();
 
@@ -306,6 +306,78 @@ describe("SQL invariants", () => {
         )
         .run(randomUUID(), user.id, project.id, "2026-01-10"),
     ).toThrow();
+  });
+});
+
+// ─── user_meep_balance in results ─────────────────────────────────────────────
+
+describe("countedClick — user_meep_balance in results", () => {
+  test("minted: user_meep_balance matches users.meep_balance post-mint", () => {
+    const db = ctx.db();
+    const owner = seedUser(db);
+    const clicker = seedUser(db);
+    const creator = seedCreator(db);
+    const project = seedProject(db, {
+      creator_id: creator.id,
+      owner_user_id: owner.id,
+      approved: 1,
+    });
+
+    const r = countedClick({ userId: clicker.id, slug: project.slug, today: "2026-01-01" });
+    if (r.kind !== "minted") throw new Error("expected minted");
+    expect(r.user_meep_balance).toBe(1);
+
+    const row = db
+      .prepare("SELECT meep_balance FROM users WHERE id = ?")
+      .get(clicker.id) as { meep_balance: number };
+    expect(r.user_meep_balance).toBe(row.meep_balance);
+  });
+
+  test("already_clicked: user_meep_balance reflects unchanged balance", () => {
+    const db = ctx.db();
+    const owner = seedUser(db);
+    const clicker = seedUser(db);
+    const creator = seedCreator(db);
+    const project = seedProject(db, {
+      creator_id: creator.id,
+      owner_user_id: owner.id,
+      approved: 1,
+    });
+
+    countedClick({ userId: clicker.id, slug: project.slug, today: "2026-01-01" });
+    const r = countedClick({ userId: clicker.id, slug: project.slug, today: "2026-01-01" });
+    if (r.kind !== "already_clicked") throw new Error("expected already_clicked");
+    expect(r.user_meep_balance).toBe(1);
+  });
+
+  test("balance grows monotonically across mints", () => {
+    const db = ctx.db();
+    const owner = seedUser(db);
+    const clicker = seedUser(db);
+    const creator = seedCreator(db);
+
+    const balances: number[] = [];
+    for (let i = 0; i < 3; i++) {
+      const p = seedProject(db, { creator_id: creator.id, owner_user_id: owner.id, approved: 1 });
+      const r = countedClick({ userId: clicker.id, slug: p.slug, today: "2026-06-01" });
+      if (r.kind !== "minted") throw new Error("expected minted");
+      balances.push(r.user_meep_balance);
+    }
+    expect(balances).toEqual([1, 2, 3]);
+  });
+});
+
+describe("getMeepBalance", () => {
+  test("returns 0 for unknown user", () => {
+    ctx.db();
+    expect(getMeepBalance("user-does-not-exist")).toBe(0);
+  });
+
+  test("returns current balance for existing user", () => {
+    const db = ctx.db();
+    const u = seedUser(db);
+    db.prepare("UPDATE users SET meep_balance = 7 WHERE id = ?").run(u.id);
+    expect(getMeepBalance(u.id)).toBe(7);
   });
 });
 

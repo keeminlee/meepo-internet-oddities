@@ -252,3 +252,58 @@ describe("cosmic_state", () => {
     expect(row.total_meeps).toBe(0);
   });
 });
+
+describe("repair migration — legacy users.github_id NOT NULL", () => {
+  test("rebuilds users table with nullable github_id and google_id column, preserves rows", () => {
+    const db = getDb();
+    // Simulate a legacy db created before multi-provider auth.
+    db.exec(`
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        github_id INTEGER UNIQUE NOT NULL,
+        handle TEXT UNIQUE,
+        display_name TEXT NOT NULL,
+        avatar_url TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+    `);
+    db.prepare(
+      `INSERT INTO users (id, github_id, display_name, created_at)
+       VALUES ('u-legacy', 42, 'Legacy User', ?)`,
+    ).run(new Date().toISOString());
+
+    runMigrations(db);
+
+    const info = db
+      .prepare<[], { name: string; notnull: number }>(`PRAGMA table_info(users)`)
+      .all();
+    const gh = info.find((c) => c.name === "github_id");
+    expect(gh?.notnull).toBe(0);
+    expect(info.some((c) => c.name === "google_id")).toBe(true);
+
+    const row = db
+      .prepare("SELECT * FROM users WHERE id = 'u-legacy'")
+      .get() as { github_id: number; display_name: string; google_id: string | null };
+    expect(row.github_id).toBe(42);
+    expect(row.display_name).toBe("Legacy User");
+    expect(row.google_id).toBeNull();
+  });
+
+  test("idempotent — running migrations twice on a repaired db does not throw", () => {
+    const db = getDb();
+    db.exec(`
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        github_id INTEGER UNIQUE NOT NULL,
+        handle TEXT UNIQUE,
+        display_name TEXT NOT NULL,
+        avatar_url TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+    `);
+    runMigrations(db);
+    expect(() => runMigrations(db)).not.toThrow();
+  });
+});

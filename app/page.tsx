@@ -1,18 +1,22 @@
 import { ArrowDown, Sparkles } from "lucide-react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { AuthButton } from "@/components/AuthButton";
 import { CosmicCounter } from "@/components/CosmicCounter";
 import { DailyQuestCard } from "@/components/DailyQuestCard";
-import { FirstMeepCoach } from "@/components/FirstMeepCoach";
 import { HomeBrowser } from "@/components/HomeBrowser";
 import { MeepoCard } from "@/components/MeepoCard";
-import { OnboardingBubbles } from "@/components/OnboardingBubbles";
+import { OnboardingDevPanel } from "@/components/OnboardingDevPanel";
 import { OnboardingInfoButton } from "@/components/OnboardingInfoButton";
+import { OnboardingTriggerManager } from "@/components/OnboardingTriggerManager";
 import { Button } from "@/components/ui/button";
+import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
+import { getMeepBalance } from "@/lib/domain/meeps";
 import { getMostLoved, getNewest } from "@/lib/domain/projects";
+import { getUserFromSession } from "@/lib/domain/sessions";
 
 // Always fetch fresh from SQLite on each request. The homepage is never cached.
 export const dynamic = "force-dynamic";
@@ -21,6 +25,11 @@ export default async function HomePage() {
   ensureBootstrapped();
   const newest = getNewest(30);
   const mostLoved = getMostLoved(30);
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
+  const viewer = token ? getUserFromSession(token) : null;
+  const balance = viewer ? getMeepBalance(viewer.id) : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,8 +93,10 @@ export default async function HomePage() {
         <p>{BRAND.footerLine}</p>
       </footer>
 
-      <OnboardingBubbles />
-      <FirstMeepCoach />
+      <OnboardingTriggerManager balance={balance} isAuthenticated={!!viewer} />
+      {process.env.NODE_ENV === "development" && (
+        <OnboardingDevPanel initialBalance={balance} isAuthenticated={!!viewer} />
+      )}
     </div>
   );
 }

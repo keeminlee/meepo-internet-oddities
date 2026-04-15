@@ -6,7 +6,15 @@ import { randomUUID } from "node:crypto";
 
 import { getDb } from "../db";
 
-const DAILY_CLICK_CAP = 10;
+import {
+  DAILY_CLICK_CAP,
+  MEEPS_PER_CLICK_COSMIC,
+  MEEPS_PER_MINT_PROJECT,
+  MEEPS_PER_MINT_USER,
+} from "./economy";
+
+// Re-export so existing `@/lib/domain/meeps` consumers keep working.
+export { DAILY_CLICK_CAP, MEEPS_PER_CLICK_COSMIC, MEEPS_PER_MINT_PROJECT, MEEPS_PER_MINT_USER };
 
 export type CountedClickResult =
   | { kind: "not_found" }
@@ -17,12 +25,14 @@ export type CountedClickResult =
       clicks_sent: number;
       external_url: string;
       daily_remaining: number;
+      user_meep_balance: number;
     }
   | {
       kind: "minted";
       clicks_sent: number;
       external_url: string;
       daily_remaining: number;
+      user_meep_balance: number;
     };
 
 export interface CountedClickInput {
@@ -76,6 +86,7 @@ export function countedClick(input: CountedClickInput): CountedClickResult {
       clicks_sent: row?.clicks_sent ?? 0,
       external_url: project.external_url,
       daily_remaining: Math.max(0, DAILY_CLICK_CAP - distinctCount),
+      user_meep_balance: getMeepBalance(input.userId),
     };
   }
 
@@ -91,12 +102,12 @@ export function countedClick(input: CountedClickInput): CountedClickResult {
       "INSERT INTO clicks (id, user_id, project_id, clicked_at) VALUES (?, ?, ?, ?)",
     ).run(randomUUID(), input.userId, project.id, today);
     db.prepare(
-      "UPDATE projects SET clicks_sent = clicks_sent + 1, meep_count = meep_count + 1 WHERE id = ?",
+      `UPDATE projects SET clicks_sent = clicks_sent + 1, meep_count = meep_count + ${MEEPS_PER_MINT_PROJECT} WHERE id = ?`,
     ).run(project.id);
-    db.prepare("UPDATE users SET meep_balance = meep_balance + 1 WHERE id = ?").run(
+    db.prepare(`UPDATE users SET meep_balance = meep_balance + ${MEEPS_PER_MINT_USER} WHERE id = ?`).run(
       input.userId,
     );
-    db.prepare("UPDATE cosmic_state SET total_meeps = total_meeps + 2 WHERE id = 1").run();
+    db.prepare(`UPDATE cosmic_state SET total_meeps = total_meeps + ${MEEPS_PER_CLICK_COSMIC} WHERE id = 1`).run();
   });
   mintTx();
 
@@ -109,7 +120,18 @@ export function countedClick(input: CountedClickInput): CountedClickResult {
     clicks_sent: row?.clicks_sent ?? 0,
     external_url: project.external_url,
     daily_remaining: Math.max(0, DAILY_CLICK_CAP - distinctCount - 1),
+    user_meep_balance: getMeepBalance(input.userId),
   };
+}
+
+/** Current meep_balance for a user, or 0 if the user does not exist. */
+export function getMeepBalance(userId: string): number {
+  const row = getDb()
+    .prepare<[string], { meep_balance: number }>(
+      "SELECT meep_balance FROM users WHERE id = ?",
+    )
+    .get(userId);
+  return row?.meep_balance ?? 0;
 }
 
 export function dailyRemaining(userId: string, today?: string): number {
@@ -121,5 +143,3 @@ export function dailyRemaining(userId: string, today?: string): number {
     .get(userId, day);
   return Math.max(0, DAILY_CLICK_CAP - (row?.count ?? 0));
 }
-
-export { DAILY_CLICK_CAP };
