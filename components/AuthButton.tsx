@@ -3,6 +3,7 @@
 import { Eye, EyeOff, Github, LogOut, Settings } from "lucide-react";
 import { GoogleIcon } from "@/components/GoogleIcon";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { SettingsDialog } from "@/components/SettingsDialog";
@@ -18,16 +19,27 @@ interface MeResponse {
 }
 
 export function AuthButton() {
+  const router = useRouter();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [viewAsUser, setViewAsUser] = useState(false);
 
   const fetchMe = useCallback(() => {
-    fetch("/api/auth/me")
+    // cache:"no-store" — defend against browser/HTTP caching of the
+    // /api/auth/me response after a profile/handle update.
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => setMe(j as MeResponse))
       .catch(() => setMe({ authenticated: false }));
   }, []);
+
+  // Wraps fetchMe + router.refresh() so server components on the current
+  // page (creator info blocks, project pages) re-render with the new
+  // display name / handle after Settings save.
+  const onSettingsSaved = useCallback(() => {
+    fetchMe();
+    router.refresh();
+  }, [fetchMe, router]);
 
   useEffect(() => { fetchMe(); }, [fetchMe]);
 
@@ -135,7 +147,7 @@ export function AuthButton() {
         onOpenChange={setSettingsOpen}
         displayName={me.user?.display_name ?? ""}
         handle={me.user?.handle ?? null}
-        onSaved={fetchMe}
+        onSaved={onSettingsSaved}
       />
     </div>
   );
