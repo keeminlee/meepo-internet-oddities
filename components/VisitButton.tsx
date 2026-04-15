@@ -17,7 +17,12 @@ type ClickResponse = {
   already_clicked?: boolean;
   daily_remaining?: number;
   auth_required?: boolean;
+  project_name?: string | null;
+  project_slug?: string | null;
+  author_handle?: string | null;
 };
+
+export const LAST_MINT_KEY = "meepo_last_mint";
 
 type Feedback =
   | { kind: "idle" }
@@ -56,8 +61,20 @@ export function VisitButton({ slug, externalUrl }: VisitButtonProps) {
         return;
       }
       if (body.meeps_minted) {
-        // Threshold-based onboarding coaches fire on the next home-page load
-        // via OnboardingTriggerManager; nothing to stash here.
+        // Stash mint context for the first_meep onboarding coach.
+        try {
+          window.localStorage.setItem(
+            LAST_MINT_KEY,
+            JSON.stringify({
+              project_name: body.project_name ?? "",
+              project_slug: body.project_slug ?? "",
+              author_handle: body.author_handle ?? "",
+              ts: Date.now(),
+            }),
+          );
+        } catch {
+          // localStorage disabled — onboarding will fall back to empty tokens.
+        }
         setFeedback({ kind: "minted", remaining: body.daily_remaining ?? 0 });
       } else if (body.already_clicked) {
         setFeedback({ kind: "already", remaining: body.daily_remaining ?? 0 });

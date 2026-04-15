@@ -28,6 +28,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         repo_url?: string;
         screenshot_url?: string;
         why_i_made_this?: string;
+        about?: string;
         tags?: string[];
         project_status?: string;
       }
@@ -43,6 +44,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       repo_url: body.repo_url,
       screenshot_url: body.screenshot_url,
       why_i_made_this: body.why_i_made_this,
+      about: body.about,
       tags: body.tags,
       project_status: body.project_status,
     },

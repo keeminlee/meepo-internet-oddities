@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CoachBubbles } from "@/components/CoachBubbles";
+import { LAST_MINT_KEY } from "@/components/VisitButton";
 import {
   computePendingTriggers,
   seenKey,
   TRIGGERS,
   type Trigger,
 } from "@/lib/onboarding/triggers";
+import { DAILY_CLICK_CAP } from "@/lib/domain/economy";
 
 // Legacy localStorage keys that predate the unified trigger registry.
 // Their values are migrated into the new seen-key scheme on first mount.
@@ -65,11 +67,42 @@ export function OnboardingTriggerManager({ balance, isAuthenticated }: Props) {
   const [ready, setReady] = useState(false);
   const [seen, setSeen] = useState<Set<string>>(() => new Set());
   const [forcedId, setForcedId] = useState<string | null>(null);
+  const [mintContext, setMintContext] = useState<Record<string, string>>({});
 
-  // One-shot: legacy migration + initial seen-set read.
+  // One-shot: legacy migration + initial seen-set read + mint context.
   useEffect(() => {
     migrateLegacy();
     setSeen(readSeen());
+    // Always-available defaults first, then overlay mint-specific fields when
+    // present. Fallbacks for projectName / authorHandle let the first bubble
+    // render readable copy even when there's no concrete last-mint context
+    // (e.g., force-preview via the dev panel). Slugs stay empty → parseLine
+    // drops the link wrapper and renders fallback text as plain prose.
+    const nextContext: Record<string, string> = {
+      dailyClickCap: String(DAILY_CLICK_CAP),
+      projectName: "a passion project crafted",
+      authorHandle: "real people",
+    };
+    try {
+      const raw = window.localStorage.getItem(LAST_MINT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as {
+          project_name?: string;
+          project_slug?: string;
+          author_handle?: string;
+        };
+        if (parsed.project_name) nextContext.projectName = parsed.project_name;
+        if (parsed.project_slug) nextContext.projectSlug = parsed.project_slug;
+        if (parsed.author_handle) {
+          nextContext.authorHandle = parsed.author_handle;
+          // authorSlug = handle (creator slugs = handles in this app)
+          nextContext.authorSlug = parsed.author_handle;
+        }
+      }
+    } catch {
+      // noop
+    }
+    setMintContext(nextContext);
     setReady(true);
   }, []);
 
@@ -144,6 +177,8 @@ export function OnboardingTriggerManager({ balance, isAuthenticated }: Props) {
       ariaTitle={active.title}
       bubbles={active.bubbles}
       position={active.position ?? "top-left"}
+      anchorId={active.anchorId}
+      context={mintContext}
       onDismiss={dismiss}
     />
   );

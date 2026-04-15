@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { SignInToSubmit } from "@/components/SignInToSubmit";
 import { SubmitForm } from "@/components/SubmitForm";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
@@ -13,7 +13,6 @@ export default async function SubmitPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
   const user = token ? getUserFromSession(token) : null;
-  if (!user) redirect("/api/auth/github");
 
   return (
     <div className="min-h-screen bg-background">
@@ -26,13 +25,19 @@ export default async function SubmitPage() {
       </header>
 
       <main className="container mx-auto max-w-2xl px-4 py-12 space-y-6">
-        <div className="space-y-2">
-          <h1 className="font-display text-3xl font-bold">Submit a project</h1>
-          <p className="text-muted-foreground">
-            Share something strange, useful, or personal. Your submission enters the review queue.
-          </p>
-        </div>
-        <SubmitForm />
+        {user ? (
+          <>
+            <div className="space-y-2">
+              <h1 className="font-display text-3xl font-bold">Submit a project</h1>
+              <p className="text-muted-foreground">
+                Share something strange, useful, or personal. Your submission enters the review queue.
+              </p>
+            </div>
+            <SubmitForm />
+          </>
+        ) : (
+          <SignInToSubmit />
+        )}
       </main>
     </div>
   );

@@ -19,8 +19,10 @@ export function SubmitForm() {
   const [repoUrl, setRepoUrl] = useState("");
   const [whyMade, setWhyMade] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [uploadedFilename, setUploadedFilename] = useState<string>("");
+  // Up to 3 screenshots. Files and their already-uploaded URLs stay aligned
+  // by index; a file with a non-null url in the same slot has been uploaded.
+  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
+  const [uploadedUrls, setUploadedUrls] = useState<(string | null)[]>([]);
   const [error, setError] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState<
@@ -58,19 +60,32 @@ export function SubmitForm() {
     setError("");
     setBusy(true);
     try {
-      let screenshotUrl = uploadedFilename ? `/uploads/${uploadedFilename}` : "";
-      if (screenshotFile && !uploadedFilename) {
+      if (screenshotFiles.length === 0) {
+        throw new Error("At least one screenshot is required");
+      }
+      // Upload any files that haven't been uploaded yet; already-uploaded URLs
+      // are reused so a retry after a non-upload failure doesn't double-upload.
+      const urls: string[] = [];
+      const nextUploaded = [...uploadedUrls];
+      for (let i = 0; i < screenshotFiles.length; i++) {
+        const cached = uploadedUrls[i];
+        if (cached) {
+          urls.push(cached);
+          continue;
+        }
         const fd = new FormData();
-        fd.append("screenshot", screenshotFile);
+        fd.append("screenshot", screenshotFiles[i]);
         const up = await fetch("/api/upload", { method: "POST", body: fd });
         if (!up.ok) {
           const j = await up.json().catch(() => ({}));
           throw new Error(j.error || "Upload failed");
         }
         const { filename } = (await up.json()) as { filename: string };
-        setUploadedFilename(filename);
-        screenshotUrl = `/uploads/${filename}`;
+        const u = `/uploads/${filename}`;
+        urls.push(u);
+        nextUploaded[i] = u;
       }
+      setUploadedUrls(nextUploaded);
 
       const res = await fetch("/api/submit", {
         method: "POST",
@@ -80,7 +95,8 @@ export function SubmitForm() {
           one_line_pitch: pitch,
           external_url: url,
           repo_url: repoUrl,
-          screenshot_url: screenshotUrl,
+          screenshot_url: urls[0],
+          screenshot_urls: urls,
           tags,
           why_i_made_this: whyMade,
         }),
@@ -189,19 +205,46 @@ export function SubmitForm() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="screenshot">Screenshot (PNG, JPEG, or WebP, max 5MB)</Label>
+        <Label htmlFor="screenshot">Screenshots (up to 3 · PNG, JPEG, or WebP, max 5MB each)</Label>
         <Input
           id="screenshot"
           type="file"
           accept="image/png,image/jpeg,image/webp"
+          multiple
           onChange={(e) => {
-            setScreenshotFile(e.target.files?.[0] ?? null);
-            setUploadedFilename("");
+            const picked = Array.from(e.target.files ?? []);
+            setScreenshotFiles((prev) => [...prev, ...picked].slice(0, 3));
+            // Reset the input so the same file can be re-picked if removed.
+            e.target.value = "";
           }}
-          required={!uploadedFilename}
+          required={screenshotFiles.length === 0}
+          disabled={screenshotFiles.length >= 3}
         />
-        {uploadedFilename && (
-          <p className="text-xs text-muted-foreground">Uploaded: {uploadedFilename}</p>
+        {screenshotFiles.length > 0 && (
+          <ul className="mt-1 space-y-1 text-xs text-muted-foreground">
+            {screenshotFiles.map((f, i) => (
+              <li key={`${f.name}-${i}`} className="flex items-center gap-2">
+                <span className="truncate">
+                  {i + 1}. {f.name}
+                  {uploadedUrls[i] ? " (uploaded)" : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScreenshotFiles((prev) => prev.filter((_, idx) => idx !== i));
+                    setUploadedUrls((prev) => prev.filter((_, idx) => idx !== i));
+                  }}
+                  className="rounded px-1.5 text-destructive hover:bg-destructive/10"
+                  aria-label={`Remove ${f.name}`}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {screenshotFiles.length >= 3 && (
+          <p className="text-xs text-muted-foreground">Max 3 screenshots.</p>
         )}
       </div>
 

@@ -1,8 +1,5 @@
 import {
   DAILY_CLICK_CAP,
-  MEEPS_PER_CLICK_COSMIC,
-  MEEPS_PER_MINT_PROJECT,
-  MEEPS_PER_MINT_USER,
 } from "../domain/economy";
 
 // Generic meep-threshold onboarding triggers.
@@ -14,12 +11,29 @@ import {
 // The registry is the single source of truth for coach content. To add a
 // new coach, append an entry — no component changes required.
 
-export type BubbleCtaKind = "next" | "signin";
+export type BubbleCtaKind = "next" | "signin" | "scroll" | "scroll-next";
 
 export interface Bubble {
   title: string;
   lines: string[];
-  primary: { label: string; kind: BubbleCtaKind };
+  /**
+   * Primary CTA. `scroll` dismisses the coach and smooth-scrolls to
+   * `scrollTarget` (an element id, e.g. "discover"). `signin` dismisses and
+   * redirects to the GitHub OAuth route. `scroll-next` scrolls to target
+   * then advances to the next bubble (does NOT dismiss).
+   */
+  primary: { label: string; kind: BubbleCtaKind; scrollTarget?: string };
+  /** Per-bubble anchor element id. Overrides the trigger-level anchorId. */
+  anchorId?: string;
+  /** Which side of the anchor to position the bubble. Default: "below". */
+  anchorSide?: "below" | "left" | "right";
+  /** When true, add `.coach-highlight` CSS class to the anchor element while this bubble is active. */
+  highlightAnchor?: boolean;
+  /** Actions dispatched when this bubble becomes active. */
+  onActivate?: { switchTab?: string };
+  /** Actions dispatched when this bubble is dismissed (via any path — CTA,
+   *  Skip, X). Fires before the manager marks the trigger as seen. */
+  onDismiss?: { switchTab?: string };
 }
 
 export type TriggerAudience = "all" | "anonymous" | "authenticated";
@@ -33,6 +47,12 @@ export interface Trigger {
   bubbles: Bubble[];
   audience?: TriggerAudience;
   position?: TriggerPosition;
+  /**
+   * If set, the coach positions itself directly below the element with this
+   * DOM id and follows it as the page scrolls. Falls back to `position` when
+   * the element is not present in the DOM.
+   */
+  anchorId?: string;
 }
 
 export const SEEN_KEY_PREFIX = "meepo_coach_seen_";
@@ -40,8 +60,6 @@ export const SEEN_KEY_PREFIX = "meepo_coach_seen_";
 export function seenKey(triggerId: string): string {
   return `${SEEN_KEY_PREFIX}${triggerId}`;
 }
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export const TRIGGERS: Trigger[] = [
   {
@@ -70,10 +88,10 @@ export const TRIGGERS: Trigger[] = [
         primary: { label: "Next", kind: "next" },
       },
       {
-        title: "Built by people, not algorithms",
+        title: "Invest in the process, not just the product",
         lines: [
-          "Every project is hand-picked. No trending feeds, no engagement tricks.",
-          "Click a card to visit the project and meet its maker.",
+          "We don't treat software like a manufactured product.",
+          "Our projects are stories — growing and evolving alongside the people crafting them.",
         ],
         primary: { label: "Next", kind: "next" },
       },
@@ -81,9 +99,9 @@ export const TRIGGERS: Trigger[] = [
         title: "Jump in",
         lines: [
           "Explore projects, give attention to the ones that resonate.",
-          "Sign in with GitHub when you're ready to bring your own.",
+          "Sign in when you're ready to bring your own.",
         ],
-        primary: { label: "Explore", kind: "next" },
+        primary: { label: "Explore", kind: "scroll", scrollTarget: "projects" },
       },
     ],
   },
@@ -91,40 +109,54 @@ export const TRIGGERS: Trigger[] = [
     id: "first_meep",
     threshold: 1,
     audience: "authenticated",
-    position: "bottom-right",
+    position: "top-left",
     title: "First meep earned",
     bubbles: [
       {
-        title: "First meep earned ✦",
+        title: "You just made something real",
         lines: [
-          `Nice — you just sent ${plural(MEEPS_PER_MINT_PROJECT, "meep")} to a project, and earned ${plural(MEEPS_PER_MINT_USER, "meep")} for yourself.`,
-          `That click also dropped ${plural(MEEPS_PER_CLICK_COSMIC, "meep")} into the universe counter.`,
+          "You just gave your attention to {link:projectName:/project/{projectSlug}} by {link:authorHandle:/creator/{authorSlug}}. A meep was born.",
+          "That's what meeps are. Not points. Not likes. Proof that somebody stopped and looked.",
         ],
-        primary: { label: "Next", kind: "next" },
+        primary: { label: "Next", kind: "scroll-next", scrollTarget: "quest-cards" },
+        // No per-bubble anchor — uses trigger position (top-left)
       },
       {
-        title: `${plural(MEEPS_PER_MINT_USER, "meep")} per new project`,
+        title: "It adds up",
         lines: [
-          `Visiting a project you haven't opened before earns ${plural(MEEPS_PER_MINT_USER, "meep")}.`,
-          `Re-clicking the same project today won't earn more — it's ${plural(MEEPS_PER_MINT_USER, "meep")} per unique project.`,
+          "Every meep earned across the site flows into one shared counter — the universe.",
+          "As more people explore, the universe grows. That's the whole idea: collective attention, not algorithms.",
         ],
         primary: { label: "Next", kind: "next" },
+        anchorId: "quest-card-universe",
+        anchorSide: "left",
+        highlightAnchor: true,
       },
       {
-        title: `${plural(DAILY_CLICK_CAP, "meep")} a day`,
+        title: "Your quest begins",
         lines: [
-          `You can earn up to ${plural(DAILY_CLICK_CAP, "meep")} per day.`,
-          "The counter resets every morning, so there's always a fresh quest waiting.",
+          "Your quest cards track your daily progress. The first {dailyClickCap} places you visit will generate meeps.",
+          "Visit new projects to fill them up!",
         ],
         primary: { label: "Next", kind: "next" },
+        anchorId: "quest-card-daily",
+        anchorSide: "right",
+        highlightAnchor: true,
       },
       {
-        title: "Meepo grows with you",
+        title: "Find your favorites",
         lines: [
-          "Every meep earned across the site flows into the observatory — one shared signal of collective attention.",
-          "The more people explore, the more the universe lights up.",
+          "Projects you've given attention to show up in your Most Loved. Come back anytime to revisit them.",
+          "Now go and continue exploring!",
         ],
-        primary: { label: "Got it", kind: "next" },
+        primary: { label: "Keep exploring", kind: "scroll", scrollTarget: "projects" },
+        anchorId: "tab-most_loved",
+        anchorSide: "below",
+        highlightAnchor: true,
+        onActivate: { switchTab: "most_loved" },
+        // On dismissal (CTA, Skip, or X) switch the tab back to Newest so the
+        // viewer lands on fresh projects as they continue exploring.
+        onDismiss: { switchTab: "newest" },
       },
     ],
   },

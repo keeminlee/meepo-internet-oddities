@@ -11,17 +11,32 @@ import { ProjectStatusBadge } from "./ProjectStatusBadge";
 import { StatusBadge } from "./StatusBadge";
 import { TagBadge } from "./TagBadge";
 
-export function ProjectCard({ project }: { project: ProjectWithCreator }) {
+interface ProjectCardProps {
+  project: ProjectWithCreator;
+  /** True when the viewer could currently mint a meep from this project.
+   *  Drives a persistent emerald outline matching the daily-quest CTA. See
+   *  `isProjectEligibleForMeep` in lib/domain/meeps for the full gate. */
+  eligibleForMeep?: boolean;
+}
+
+export function ProjectCard({ project, eligibleForMeep = false }: ProjectCardProps) {
   const router = useRouter();
   const [screenshotError, setScreenshotError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const creatorName = project.creator?.display_name ?? "Unknown";
   const creatorHandle = project.creator?.handle ? `@${project.creator.handle}` : null;
 
+  // Persistent emerald outline for eligible cards — visible at rest, not just
+  // on hover. Hover bumps the glow a little for affordance.
+  const borderClass = eligibleForMeep ? "border-emerald-500/40" : "border-border";
+  const hoverGlow = eligibleForMeep
+    ? "hover:shadow-lg hover:shadow-emerald-500/25 hover:border-emerald-500/60"
+    : "hover:shadow-lg hover:shadow-primary/5";
+
   return (
     <Link
       href={`/project/${project.slug}`}
-      className="group block overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5"
+      className={`group block overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:-translate-y-1 ${borderClass} ${hoverGlow}`}
     >
       <div className="relative overflow-hidden aspect-video">
         {project.screenshot_url && !screenshotError ? (

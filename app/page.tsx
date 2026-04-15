@@ -14,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { SESSION_COOKIE } from "@/lib/auth/session";
 import { BRAND } from "@/lib/constants";
 import { ensureBootstrapped } from "@/lib/db/bootstrap";
-import { getMeepBalance } from "@/lib/domain/meeps";
+import {
+  filterEligibleProjectIds,
+  getMeepBalance,
+  getViewerEligibilityContext,
+  getVisitedToday,
+} from "@/lib/domain/meeps";
 import { getMostLoved, getNewest } from "@/lib/domain/projects";
 import { getUserFromSession } from "@/lib/domain/sessions";
 
@@ -23,13 +28,22 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   ensureBootstrapped();
-  const newest = getNewest(30);
-  const mostLoved = getMostLoved(30);
 
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value ?? "";
   const viewer = token ? getUserFromSession(token) : null;
   const balance = viewer ? getMeepBalance(viewer.id) : 0;
+
+  const newest = getNewest(30);
+  const mostLoved = getMostLoved(viewer?.id ?? null, 30);
+
+  // Eligibility for the homepage glow: union the visible projects, then
+  // filter against the viewer's eligibility context (same rules as the mint
+  // path in countedClick). Anonymous viewers → empty set, no glow.
+  const context = viewer ? getViewerEligibilityContext(viewer.id) : null;
+  const visibleProjects = [...newest, ...mostLoved];
+  const eligibleProjectIds = filterEligibleProjectIds(context, visibleProjects);
+  const visitedTodayIds = viewer ? getVisitedToday(viewer.id) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,10 +78,10 @@ export default async function HomePage() {
                 Submit a project
               </Button>
             </Link>
-            <Link href="#discover">
+            <Link href="#projects">
               <Button size="lg" variant="outline">
                 <ArrowDown className="h-4 w-4" />
-                Explore the observatory
+                Explore the universe
               </Button>
             </Link>
           </div>
@@ -75,18 +89,30 @@ export default async function HomePage() {
         <div className="mt-6 text-sm text-muted-foreground">Authorship is the feature.</div>
       </section>
 
-      <main id="discover" className="container mx-auto space-y-16 px-4 pb-20">
-        {/* Pinned cards — observatory + daily quest side by side */}
-        <div className="mx-auto flex max-w-2xl flex-col gap-4 sm:flex-row">
-          <div className="flex-1">
-            <MeepoCard />
+      <main className="container mx-auto space-y-16 px-4 pb-20">
+        {/* Pinned cards — universe + daily quest. Hidden until the viewer
+            has earned at least one meep; also the anchor target for the
+            first_meep coach (id="quest-cards"). */}
+        {balance >= 1 && (
+          <div
+            id="quest-cards"
+            className="mx-auto flex max-w-2xl flex-col gap-4 sm:flex-row"
+          >
+            <div id="quest-card-universe" className="flex-1">
+              <MeepoCard />
+            </div>
+            <div id="quest-card-daily" className="flex-1">
+              <DailyQuestCard />
+            </div>
           </div>
-          <div className="flex-1">
-            <DailyQuestCard />
-          </div>
-        </div>
+        )}
 
-        <HomeBrowser newest={newest} mostLoved={mostLoved} />
+        <HomeBrowser
+          newest={newest}
+          mostLoved={mostLoved}
+          eligibleProjectIds={eligibleProjectIds}
+          visitedTodayIds={visitedTodayIds}
+        />
       </main>
 
       <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
