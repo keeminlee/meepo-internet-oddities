@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
   const result = setHandle(user.id, body.handle ?? "");
   if ("error" in result) {
     if (result.error === "taken") return fail("Handle already taken", 409);
+    if (result.error === "already_set")
+      return fail("Handle is permanent and cannot be changed once set", 409);
     return fail(
       "Handle must be 3-20 characters, lowercase letters, numbers, and hyphens only",
       400,

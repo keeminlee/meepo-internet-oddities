@@ -109,7 +109,7 @@ export function findOrCreateFromGoogle(profile: GoogleProfile): User {
   return created;
 }
 
-export type HandleError = "invalid_format" | "taken";
+export type HandleError = "invalid_format" | "taken" | "already_set";
 
 const HANDLE_REGEX = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/;
 
@@ -120,6 +120,21 @@ export function setHandle(
   const handle = rawHandle.trim().toLowerCase();
   if (!HANDLE_REGEX.test(handle)) return { error: "invalid_format" };
   const db = getDb();
+  // Handle is permanent once set — changes would break /creator/{handle}
+  // URLs anyone shared and let other users claim the freed handle.
+  const current = db
+    .prepare<[string], { handle: string | null }>(
+      "SELECT handle FROM users WHERE id = ?",
+    )
+    .get(userId);
+  if (current?.handle && current.handle !== handle) {
+    return { error: "already_set" };
+  }
+  // No-op if the user is "setting" their existing handle — return current.
+  if (current?.handle === handle) {
+    const user = getUserById(userId);
+    return user ? { user } : { error: "invalid_format" };
+  }
   const clash = db
     .prepare<[string, string], { id: string }>(
       "SELECT id FROM users WHERE handle = ? AND id != ?",
