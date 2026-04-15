@@ -71,12 +71,24 @@ export function AuthButton() {
   };
 
   const isWriter = me.is_meepo_writer && !viewAsUser;
-  const myMeepsHref = me.user?.handle ? `/creator/${me.user.handle}` : "#";
+  const hasHandle = !!me.user?.handle;
+  const myMeepsHref = hasHandle ? `/creator/${me.user!.handle}` : "#";
+
+  // Without a handle the creator URL doesn't exist yet — opening Settings
+  // (with the handle field surfaced) is more useful than navigating to "#".
+  const onMyProjectsClick = (e: React.MouseEvent) => {
+    if (!hasHandle) {
+      e.preventDefault();
+      setSettingsOpen(true);
+    }
+  };
 
   return (
     <div className="flex items-center gap-2">
       <Link
         href={myMeepsHref}
+        onClick={onMyProjectsClick}
+        title={hasHandle ? "View your projects" : "Set a handle to enable your profile"}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity"
       >
         {me.user?.avatar_url ? (
@@ -122,6 +134,7 @@ export function AuthButton() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         displayName={me.user?.display_name ?? ""}
+        handle={me.user?.handle ?? null}
         onSaved={fetchMe}
       />
     </div>
