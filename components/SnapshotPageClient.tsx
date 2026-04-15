@@ -26,7 +26,7 @@ export function SnapshotPageClient({ slug, snapshot, totalVersions }: SnapshotPa
         totalVersions={totalVersions}
         onChange={handleVersionChange}
       />
-      <SnapshotView snapshot={snapshot} />
+      <SnapshotView slug={slug} snapshot={snapshot} />
       {totalVersions > 1 && (
         <SnapshotNav
           currentVersion={snapshot.version_number}
