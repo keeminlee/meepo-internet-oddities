@@ -84,8 +84,8 @@ export function createSubmission(
         id, creator_id, owner_user_id, slug, name, project_avatar_url, one_line_pitch,
         screenshot_url, external_url, repo_url, built_with, tags, source_type, status, clicks_sent,
         about, why_i_made_this, featured, approved, reviewed, is_demo, rejected, rejection_reason,
-        rejected_at, rejected_by, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, ?, 0, 0, 0, '', '', '', ?, '')`,
+        rejected_at, rejected_by, created_at, updated_at, project_status
+      ) VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, ?, '', ?, 'both', 'Live', 0, '', ?, 0, ?, 0, 0, 0, '', '', '', ?, '', 'in progress')`,
     ).run(
       id,
       userId,
