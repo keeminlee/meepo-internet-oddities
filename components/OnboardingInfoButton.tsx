@@ -3,7 +3,13 @@
 import { HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { ONBOARDING_DISMISS_EVENT, ONBOARDING_REPLAY_EVENT, ONBOARDING_STORAGE_KEY } from "@/components/OnboardingBubbles";
+import {
+  ONBOARDING_DISMISS_EVENT,
+  ONBOARDING_REPLAY_EVENT,
+} from "@/components/OnboardingTriggerManager";
+import { seenKey } from "@/lib/onboarding/triggers";
+
+const INITIAL_SEEN_KEY = seenKey("initial");
 
 export function OnboardingInfoButton() {
   const [show, setShow] = useState(false);
@@ -11,7 +17,7 @@ export function OnboardingInfoButton() {
   useEffect(() => {
     const sync = () => {
       try {
-        setShow(window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "1");
+        setShow(window.localStorage.getItem(INITIAL_SEEN_KEY) === "1");
       } catch {
         setShow(false);
       }
@@ -19,7 +25,7 @@ export function OnboardingInfoButton() {
 
     sync();
 
-    // Re-check when storage changes (cross-tab) or onboarding is dismissed (same tab)
+    // Re-check when storage changes (cross-tab) or a coach is dismissed (same tab)
     window.addEventListener("storage", sync);
     window.addEventListener(ONBOARDING_DISMISS_EVENT, sync);
     return () => {
@@ -28,7 +34,7 @@ export function OnboardingInfoButton() {
     };
   }, []);
 
-  // Also hide when onboarding replays, re-show when it finishes
+  // Hide while the initial coach is replaying; re-show when it finishes (via dismiss event).
   useEffect(() => {
     const onReplay = () => setShow(false);
     window.addEventListener(ONBOARDING_REPLAY_EVENT, onReplay);
@@ -38,11 +44,7 @@ export function OnboardingInfoButton() {
   if (!show) return null;
 
   const replay = () => {
-    try {
-      window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
+    // The manager owns seen-key state; just ask it to replay.
     setShow(false);
     window.dispatchEvent(new CustomEvent(ONBOARDING_REPLAY_EVENT));
   };

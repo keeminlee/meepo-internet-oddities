@@ -4,10 +4,6 @@ import { ExternalLink, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  FIRST_MEEP_PENDING_KEY,
-  FIRST_MEEP_SEEN_KEY,
-} from "@/components/FirstMeepCoach";
 
 interface VisitButtonProps {
   slug: string;
@@ -60,13 +56,8 @@ export function VisitButton({ slug, externalUrl }: VisitButtonProps) {
         return;
       }
       if (body.meeps_minted) {
-        try {
-          if (window.localStorage.getItem(FIRST_MEEP_SEEN_KEY) !== "1") {
-            window.localStorage.setItem(FIRST_MEEP_PENDING_KEY, "1");
-          }
-        } catch {
-          // ignore: coach is a nice-to-have
-        }
+        // Threshold-based onboarding coaches fire on the next home-page load
+        // via OnboardingTriggerManager; nothing to stash here.
         setFeedback({ kind: "minted", remaining: body.daily_remaining ?? 0 });
       } else if (body.already_clicked) {
         setFeedback({ kind: "already", remaining: body.daily_remaining ?? 0 });

@@ -36,6 +36,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
         meeps_minted: false,
         already_clicked: true,
         daily_remaining: outcome.daily_remaining,
+        user_meep_balance: outcome.user_meep_balance,
       });
     case "minted":
       return ok({
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
         external_url: outcome.external_url,
         meeps_minted: true,
         daily_remaining: outcome.daily_remaining,
+        user_meep_balance: outcome.user_meep_balance,
       });
     default: {
       // Exhaustive check
