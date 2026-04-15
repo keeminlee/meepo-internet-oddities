@@ -26,12 +26,15 @@ export function getOAuthConfig(): GithubOAuthConfig {
 }
 
 export function buildAuthorizeUrl(state: string, cfg = getOAuthConfig()): string {
+  // Minimal scope: `user:email` is enough to read the verified primary email
+  // via /user/emails. Public profile fields (id, login, name, avatar_url) are
+  // returned without any scope. Dropped `read:user` (which grants "Read all
+  // user profile data") to keep the consent screen narrow.
   const params = new URLSearchParams({
     client_id: cfg.clientId,
     redirect_uri: cfg.callbackUrl,
-    scope: "read:user user:email",
+    scope: "user:email",
     state,
-    prompt: "consent",
   });
   return `https://github.com/login/oauth/authorize?${params.toString()}`;
 }

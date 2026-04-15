@@ -1,6 +1,7 @@
-// Google OAuth helpers. Mirrors lib/auth/github.ts. The route handlers in
-// app/api/auth/google/* orchestrate the full flow: redirect with state,
-// callback exchange, user + session creation.
+// Google OAuth helpers. Mirrors lib/auth/github.ts. Initiation lives at
+// app/api/auth/google/route.ts; the callback lives at
+// app/api/auth/callback/google/route.ts (NextAuth.js convention so the
+// path matches what most GCP OAuth tutorials configure).
 
 export interface GoogleOAuthConfig {
   clientId: string;
@@ -17,8 +18,8 @@ export function getGoogleOAuthConfig(): GoogleOAuthConfig {
     callbackUrl:
       process.env.GOOGLE_CALLBACK_URL?.trim() ||
       (process.env.NODE_ENV === "production"
-        ? "https://meepo.online/api/auth/google/callback"
-        : "http://localhost:3001/api/auth/google/callback"),
+        ? "https://meepo.online/api/auth/callback/google"
+        : "http://localhost:3001/api/auth/callback/google"),
     frontendUrl:
       process.env.FRONTEND_URL?.trim() ||
       (process.env.NODE_ENV === "production" ? "https://meepo.online" : "http://localhost:3001"),
